@@ -1,4 +1,6 @@
-﻿using JU;
+﻿#if UNITY_EDITOR
+
+using JU;
 using JUTPS;
 using JUTPS.ActionScripts;
 using JUTPS.FX;
@@ -345,3 +347,5 @@ namespace JUTPSEditor
         }
     }
 }
+
+#endif

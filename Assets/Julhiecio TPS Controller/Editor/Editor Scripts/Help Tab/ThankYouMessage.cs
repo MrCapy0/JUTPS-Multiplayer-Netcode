@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿#if UNITY_EDITOR
+
+using UnityEngine;
 using UnityEditor;
 
 // This window does not work correctly on linux, idk why.
@@ -166,4 +168,5 @@ namespace JUTPS.CustomEditors
     }
 }
 
+#endif
 #endif

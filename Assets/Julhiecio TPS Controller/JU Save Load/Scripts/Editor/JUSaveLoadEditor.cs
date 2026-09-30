@@ -1,3 +1,5 @@
+#if UNITY_EDITOR
+
 using JU.SaveLoad;
 using UnityEditor;
 
@@ -19,3 +21,5 @@ namespace JUTPS.SaveLoad.Editor
         }
     }
 }
+
+#endif

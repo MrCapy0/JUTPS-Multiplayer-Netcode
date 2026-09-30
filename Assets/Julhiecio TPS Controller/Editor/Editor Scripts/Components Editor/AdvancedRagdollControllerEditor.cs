@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿#if UNITY_EDITOR
+
+using UnityEngine;
 using UnityEditor;
 using JUTPS.PhysicsScripts;
 
@@ -85,3 +87,5 @@ namespace JUTPS.CustomEditors
         }
     }
 }
+
+#endif

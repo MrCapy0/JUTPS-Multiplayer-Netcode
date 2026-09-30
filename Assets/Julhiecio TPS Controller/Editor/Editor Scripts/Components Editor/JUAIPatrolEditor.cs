@@ -1,3 +1,5 @@
+#if UNITY_EDITOR
+
 using UnityEngine;
 using UnityEditor;
 using JU.CharacterSystem.AI;
@@ -138,3 +140,5 @@ namespace JUTPSEditor
         }
     }
 }
+
+#endif

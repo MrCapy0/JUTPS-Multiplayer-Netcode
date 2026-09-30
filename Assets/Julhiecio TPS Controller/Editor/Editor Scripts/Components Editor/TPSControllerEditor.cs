@@ -1,4 +1,6 @@
-﻿using JUTPS.JUInputSystem;
+﻿#if UNITY_EDITOR
+
+using JUTPS.JUInputSystem;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -542,3 +544,5 @@ namespace JUTPS.CustomEditors
         }
     }
 }
+
+#endif

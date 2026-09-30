@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿#if UNITY_EDITOR
+
+using UnityEngine;
 using UnityEditor;
 
 using JUTPS.InventorySystem;
@@ -48,3 +50,5 @@ namespace JUTPS.CustomEditors
         }
     }
 }
+
+#endif

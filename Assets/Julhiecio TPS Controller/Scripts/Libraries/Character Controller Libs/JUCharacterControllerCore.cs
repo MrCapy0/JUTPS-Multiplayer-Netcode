@@ -290,17 +290,17 @@ namespace JUTPS.CharacterBrain
         protected float WeaponSwitchingCurrentTime { get; set; }
 
         //Hand IK Targets
-        private Transform IKPositionRightHand;
-        private Transform IKPositionLeftHand;
-        private Transform RightHandIKPositionTarget;
-        private Transform LeftHandIKPositionTarget;
+        public Transform IKPositionRightHand;
+        public Transform IKPositionLeftHand;
+        public Transform RightHandIKPositionTarget;
+        public Transform LeftHandIKPositionTarget;
         //Bones
         public Transform HumanoidSpine;
         public Transform RightFootBone { get; private set; }
         public Transform LeftFootBone { get; private set; }
 
-        protected float LookWeightIK { get; set; }
-        protected float ArmsWeightIK { get; set; }
+        public float LookWeightIK { get; set; }
+        public float ArmsWeightIK { get; set; }
         public float LeftHandWeightIK { get; set; }
         public float RightHandWeightIK { get; set; }
 

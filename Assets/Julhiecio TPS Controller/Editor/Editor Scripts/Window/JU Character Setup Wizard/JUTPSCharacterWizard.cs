@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿#if UNITY_EDITOR
+
+using UnityEngine;
 using UnityEditor;
 using JUTPSEditor;
 using JUTPS;
@@ -315,3 +317,5 @@ public class JUCharacterSetupWizard : EditorWindow
         Debug.Log("Items copied from source.");
     }
 }
+
+#endif
