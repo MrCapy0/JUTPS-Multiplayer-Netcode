@@ -284,12 +284,12 @@ namespace JUTPS.VehicleSystem
             // Freeze rigidbody rotation.
             if (IsGrounded)
             {
-                RigidBody.angularDrag = Inclination.OnGroundDrag;
+                RigidBody.angularDamping = Inclination.OnGroundDrag;
                 RigidBody.constraints = RigidbodyConstraints.FreezeRotationZ;
             }
             else
             {
-                RigidBody.angularDrag = Inclination.OffGroundDrag;
+                RigidBody.angularDamping = Inclination.OffGroundDrag;
                 RigidBody.constraints = RigidbodyConstraints.None;
             }
         }

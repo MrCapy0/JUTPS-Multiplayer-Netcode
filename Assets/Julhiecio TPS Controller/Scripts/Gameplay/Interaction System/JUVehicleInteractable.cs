@@ -70,7 +70,7 @@ namespace JUTPS.InteractionSystem.Interactables
                 return false;
 
             float vehicleSpeed = Vehicle.Velocity.magnitude;
-            float characterSpeed = characterPhysics.velocity.magnitude;
+            float characterSpeed = characterPhysics.linearVelocity.magnitude;
 
             bool isVehicleStoped = vehicleSpeed < EnterExitVehicle.MaxVehicleSpeedToEnter;
             bool isCharacterStoped = characterSpeed < EnterExitVehicle.MaxCharacterSpeedToEnter;

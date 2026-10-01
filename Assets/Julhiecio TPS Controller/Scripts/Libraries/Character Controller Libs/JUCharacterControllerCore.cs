@@ -921,9 +921,9 @@ namespace JUTPS.CharacterBrain
         {
             if (SetRigidbodyVelocity)
             {
-                var localVelocity = transform.InverseTransformDirection(rb.velocity);
-                rb.velocity = transform.forward * SpeedMultiplier * Speed + transform.up * localVelocity.y;
-                rb.velocity = rb.velocity;
+                var localVelocity = transform.InverseTransformDirection(rb.linearVelocity);
+                rb.linearVelocity = transform.forward * SpeedMultiplier * Speed + transform.up * localVelocity.y;
+                rb.linearVelocity = rb.linearVelocity;
                 //rb.velocity = transform.forward * SpeedMultiplier * Speed + transform.up * rb.velocity.y;
             }
             else
@@ -935,7 +935,7 @@ namespace JUTPS.CharacterBrain
         {
             if (SetRigidbodyVelocity)
             {
-                rb.velocity = Movement * SpeedMultiplier * Speed;
+                rb.linearVelocity = Movement * SpeedMultiplier * Speed;
             }
             else
             {
@@ -946,8 +946,8 @@ namespace JUTPS.CharacterBrain
         {
             if (SetRigidbodyVelocity)
             {
-                var localVelocity = DirectionMovement.InverseTransformDirection(rb.velocity);
-                rb.velocity = DirectionMovement.forward * SpeedMultiplier * Speed + transform.up * localVelocity.y;
+                var localVelocity = DirectionMovement.InverseTransformDirection(rb.linearVelocity);
+                rb.linearVelocity = DirectionMovement.forward * SpeedMultiplier * Speed + transform.up * localVelocity.y;
             }
             else
             {
@@ -970,9 +970,9 @@ namespace JUTPS.CharacterBrain
         {
             if (SetRigidbodyVelocity)
             {
-                var localVelocity = transform.InverseTransformDirection(rb.velocity);
+                var localVelocity = transform.InverseTransformDirection(rb.linearVelocity);
 
-                rb.velocity = SmoothedDesiredDirection(10) * SpeedMultiplier * Speed + transform.up * localVelocity.y;
+                rb.linearVelocity = SmoothedDesiredDirection(10) * SpeedMultiplier * Speed + transform.up * localVelocity.y;
                 //rb.velocity = DirectionTransform.forward * SpeedMultiplier * Speed + transform.up * localVelocity.y;
                 //rb.velocity = DirectionTransform.forward * SpeedMultiplier * Speed + transform.up * rb.velocity.y;
             }
@@ -1526,7 +1526,7 @@ namespace JUTPS.CharacterBrain
             {
                 if (Ragdoller != null) { if (Ragdoller.State != AdvancedRagdollController.RagdollState.Animated) return; }
 
-                anim.updateMode = AnimatorUpdateMode.AnimatePhysics;
+                anim.updateMode = AnimatorUpdateMode.Fixed;
                 //RootMotionDeltaPosition = anim.deltaPosition * Time.fixedDeltaTime;
                 RootMotionDeltaPosition = Vector3.Lerp(RootMotionDeltaPosition, anim.deltaPosition, 16 * Time.fixedDeltaTime);
                 RootMotionDeltaPosition.y = 0;
@@ -1539,18 +1539,18 @@ namespace JUTPS.CharacterBrain
                 {
                     if (Time.timeScale == 1)
                     {
-                        rb.velocity = (RootMotionDeltaPosition * Time.fixedDeltaTime) * 5000 * RootMotionSpeed + Vector3.up * rb.velocity.y;
+                        rb.linearVelocity = (RootMotionDeltaPosition * Time.fixedDeltaTime) * 5000 * RootMotionSpeed + Vector3.up * rb.linearVelocity.y;
                         //rb.MovePosition(transform.position + RootMotionDeltaPosition * RootMotionSpeed);
                     }
                     else
                     {
                         if (CurvedMovement)
                         {
-                            rb.velocity = transform.forward * VelocityMultiplier * Speed + Vector3.up * rb.velocity.y;
+                            rb.linearVelocity = transform.forward * VelocityMultiplier * Speed + Vector3.up * rb.linearVelocity.y;
                         }
                         else
                         {
-                            rb.velocity = DirectionTransform.forward * VelocityMultiplier * Speed + Vector3.up * rb.velocity.y;
+                            rb.linearVelocity = DirectionTransform.forward * VelocityMultiplier * Speed + Vector3.up * rb.linearVelocity.y;
                         }
                     }
                 }
@@ -2346,7 +2346,7 @@ namespace JUTPS.CharacterBrain
             //Reset Rigidbody
             rb.useGravity = true;
             rb.isKinematic = false;
-            rb.velocity = transform.up * rb.velocity.y;
+            rb.linearVelocity = transform.up * rb.linearVelocity.y;
             rb.constraints = RigidbodyConstraints.FreezeRotation;
 
             //Enable Tps Script

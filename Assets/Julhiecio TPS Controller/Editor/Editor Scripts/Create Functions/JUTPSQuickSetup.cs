@@ -248,7 +248,7 @@ namespace JUTPSEditor
             if (!CharacterGameObject.TryGetComponent<CapsuleCollider>(out var col))
                 col = (CapsuleCollider)Undo.AddComponent(CharacterGameObject, typeof(CapsuleCollider));
 
-            var noSlip = (PhysicMaterial)Resources.Load("NoSlip", typeof(PhysicMaterial));
+            var noSlip = (PhysicsMaterial)Resources.Load("NoSlip", typeof(PhysicsMaterial));
             col.material = noSlip;
 
             Undo.AddComponent(CharacterGameObject, typeof(ResizableCapsuleCollider));

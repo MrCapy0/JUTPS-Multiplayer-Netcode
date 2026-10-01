@@ -13,7 +13,7 @@ namespace JUTPS.Utilities
         {
             if (collision.gameObject.TryGetComponent(out Rigidbody rb))
             {
-                rb.velocity = transform.up * Force;
+                rb.linearVelocity = transform.up * Force;
             }
         }
     }

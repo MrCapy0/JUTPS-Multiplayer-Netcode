@@ -208,7 +208,7 @@ namespace JUTPS.ActionScripts
         {
             // Physic Changes.
             if (rb)
-                rb.velocity = CurrentVehicle.RigidBody.velocity;
+                rb.linearVelocity = CurrentVehicle.RigidBody.linearVelocity;
 
             // Update character position inside vehicle.
             if (CurrentVehicleCharacterIK && CurrentVehicleCharacterIK.InverseKinematicTargetPositions.CharacterPosition)

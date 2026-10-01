@@ -100,9 +100,9 @@ namespace JUTPS.FX
             bool isWheelStopping = Mathf.Abs(wheelCollider.rpm) == 0;
 
             // Check if the vehicle is still moving (positive or negative velocity, in global space)
-            bool isMoving = rb.velocity.magnitude > 0; // Any movement, whether forward or backward
-            bool isMovingForward = Vector3.Dot(rb.velocity, transform.forward) > 0; // Moving forward
-            bool isMovingBackward = Vector3.Dot(rb.velocity, transform.forward) < 0; // Moving backward
+            bool isMoving = rb.linearVelocity.magnitude > 0; // Any movement, whether forward or backward
+            bool isMovingForward = Vector3.Dot(rb.linearVelocity, transform.forward) > 0; // Moving forward
+            bool isMovingBackward = Vector3.Dot(rb.linearVelocity, transform.forward) < 0; // Moving backward
 
             // If there is no ground hit, stop skidding
             if (hit.point == Vector3.zero)

@@ -1,0 +1,655 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &6476026911824225362
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4027446090950943866, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 22.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4027446090950943866, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 4027446090950943866, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 38.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4027446090950943866, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4027446090950943866, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4027446090950943866, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4027446090950943866, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4027446090950943866, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4027446090950943866, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4027446090950943866, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4372868026506870464, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
+      propertyPath: m_Name
+      value: TPS Character Multiplayer
+      objectReference: {fileID: 0}
+    - target: {fileID: 4372868026506870464, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4372868026506870464, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4118000266395096686}
+    - targetCorrespondingSourceObject: {fileID: 4372868026506870464, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -4866723829573085533}
+    - targetCorrespondingSourceObject: {fileID: 4372868026506870464, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -3227373679069331640}
+    - targetCorrespondingSourceObject: {fileID: 4372868026506870464, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -6469767879806286420}
+    - targetCorrespondingSourceObject: {fileID: 4372868026506870464, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -6412901718335065707}
+  m_SourcePrefab: {fileID: 100100000, guid: 5d1a776477408be4294d1082585c2df4, type: 3}
+--- !u!95 &4096877215620291154 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 6990835895164698112, guid: 5d1a776477408be4294d1082585c2df4,
+    type: 3}
+  m_PrefabInstance: {fileID: 6476026911824225362}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &7309610918621338258 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4372868026506870464, guid: 5d1a776477408be4294d1082585c2df4,
+    type: 3}
+  m_PrefabInstance: {fileID: 6476026911824225362}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &4118000266395096686
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7309610918621338258}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 3501707694
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  m_InScenePlacedDisabledByDefault: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  m_InScenePlaced: 0
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &-4866723829573085533
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7309610918621338258}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca21c957014d5af4eb979dabef2a15af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: JUTPS.Multiplayer.Netcode::JUNetcodeCharacterController
+  ShowTopMostFoldoutHeaderGroup: 1
+  UserInterfacePrefab: {fileID: 892490308667894269, guid: 9d63974dc0e5a674ca23b9482bcbcf08,
+    type: 3}
+  CameraControllerPrefab: {fileID: 3243631560226216736, guid: 3f9896eb08ade7b4ab7b111e294279d4,
+    type: 3}
+--- !u!114 &-3227373679069331640
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7309610918621338258}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkTransform
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
+  AuthorityMode: 1
+  TickSyncChildren: 0
+  UseUnreliableDeltas: 0
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 1
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 1
+  SyncScaleX: 1
+  SyncScaleY: 1
+  SyncScaleZ: 1
+  PositionThreshold: 0.001
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
+  InLocalSpace: 0
+  SwitchTransformSpaceWhenParented: 0
+  Interpolate: 1
+  SlerpPosition: 0
+--- !u!114 &-6469767879806286420
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7309610918621338258}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6c0be61502bb534f922ebb746851216, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkRigidbody
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkRigidbodyBaseExpanded: 0
+  UseRigidBodyForMotion: 0
+  AutoUpdateKinematicState: 1
+  AutoSetKinematicOnDespawn: 1
+--- !u!114 &-6412901718335065707
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7309610918621338258}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkAnimator
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkAnimatorExpanded: 0
+  AuthorityMode: 1
+  m_Animator: {fileID: 4096877215620291154}
+  TransitionStateInfoList:
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 424340343
+    DestinationState: 2034600720
+    TransitionDuration: 0.1453843
+    TriggerNameHash: -316645540
+    TransitionIndex: 0
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 424340343
+    DestinationState: -1903714832
+    TransitionDuration: 0.15291977
+    TriggerNameHash: -1903714832
+    TransitionIndex: 3
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 424340343
+    DestinationState: 1745353332
+    TransitionDuration: 0.25000006
+    TriggerNameHash: -526411307
+    TransitionIndex: 6
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 424340343
+    DestinationState: 652896393
+    TransitionDuration: 0.24999976
+    TriggerNameHash: -1312878289
+    TransitionIndex: 7
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 424340343
+    DestinationState: -1720556949
+    TransitionDuration: 0.24999985
+    TriggerNameHash: -766121365
+    TransitionIndex: 8
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 424340343
+    DestinationState: -1907200461
+    TransitionDuration: 0.25
+    TriggerNameHash: -1907200461
+    TransitionIndex: 9
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: -531834198
+    DestinationState: -1756632516
+    TransitionDuration: 0.18748641
+    TriggerNameHash: -316645540
+    TransitionIndex: 0
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: -531834198
+    DestinationState: -1903714832
+    TransitionDuration: 0.25
+    TriggerNameHash: -1903714832
+    TransitionIndex: 3
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 2034600720
+    DestinationState: -531834198
+    TransitionDuration: 0.22841889
+    TriggerNameHash: -316645540
+    TransitionIndex: 0
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 2034600720
+    DestinationState: -1903714832
+    TransitionDuration: 0.25
+    TriggerNameHash: -1903714832
+    TransitionIndex: 3
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: -1756632516
+    DestinationState: 2034600720
+    TransitionDuration: 0.11361164
+    TriggerNameHash: -316645540
+    TransitionIndex: 0
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: -1756632516
+    DestinationState: -1903714832
+    TransitionDuration: 0.08638191
+    TriggerNameHash: -1903714832
+    TransitionIndex: 3
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: -295454458
+    DestinationState: 2034600720
+    TransitionDuration: 0.19090346
+    TriggerNameHash: -316645540
+    TransitionIndex: 2
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: -295454458
+    DestinationState: -1903714832
+    TransitionDuration: 0.19166687
+    TriggerNameHash: -1903714832
+    TransitionIndex: 3
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: -295454458
+    DestinationState: 1745353332
+    TransitionDuration: 0.25
+    TriggerNameHash: -526411307
+    TransitionIndex: 7
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: -295454458
+    DestinationState: 652896393
+    TransitionDuration: 0.25
+    TriggerNameHash: -1312878289
+    TransitionIndex: 8
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: -295454458
+    DestinationState: -1720556949
+    TransitionDuration: 0.25
+    TriggerNameHash: -766121365
+    TransitionIndex: 9
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: -295454458
+    DestinationState: -1907200461
+    TransitionDuration: 0.31636578
+    TriggerNameHash: -1907200461
+    TransitionIndex: 10
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 1137391654
+    DestinationState: -1907200461
+    TransitionDuration: 0.25
+    TriggerNameHash: -1907200461
+    TransitionIndex: 1
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 1137391654
+    DestinationState: 1745353332
+    TransitionDuration: 0.25
+    TriggerNameHash: -526411307
+    TransitionIndex: 2
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 1137391654
+    DestinationState: -1720556949
+    TransitionDuration: 0.02445817
+    TriggerNameHash: -766121365
+    TransitionIndex: 3
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: -204059597
+    DestinationState: -1903714832
+    TransitionDuration: 0.09088105
+    TriggerNameHash: -1903714832
+    TransitionIndex: 2
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 1975101386
+    DestinationState: -1903714832
+    TransitionDuration: 0.094114065
+    TriggerNameHash: -1903714832
+    TransitionIndex: 2
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 1975101386
+    DestinationState: 2034600720
+    TransitionDuration: 0.25000018
+    TriggerNameHash: -316645540
+    TransitionIndex: 4
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 1975101386
+    DestinationState: 1745353332
+    TransitionDuration: 0.24999994
+    TriggerNameHash: -526411307
+    TransitionIndex: 6
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 1975101386
+    DestinationState: 652896393
+    TransitionDuration: 0.25000018
+    TriggerNameHash: -1312878289
+    TransitionIndex: 7
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 1975101386
+    DestinationState: -1720556949
+    TransitionDuration: 0.24999988
+    TriggerNameHash: -766121365
+    TransitionIndex: 8
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 1975101386
+    DestinationState: -1907200461
+    TransitionDuration: 0.2499997
+    TriggerNameHash: -1907200461
+    TransitionIndex: 9
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 62829390
+    DestinationState: -1903714832
+    TransitionDuration: 0.24999994
+    TriggerNameHash: -1903714832
+    TransitionIndex: 2
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 902576923
+    DestinationState: -1903714832
+    TransitionDuration: 0.25
+    TriggerNameHash: -1903714832
+    TransitionIndex: 2
+  - IsCrossFadeExit: 0
+    Layer: 4
+    OriginatingState: 1841173044
+    DestinationState: 1578859161
+    TransitionDuration: 0.25
+    TriggerNameHash: -1069963935
+    TransitionIndex: 2
+  - IsCrossFadeExit: 0
+    Layer: 4
+    OriginatingState: 1841173044
+    DestinationState: 1857847741
+    TransitionDuration: 0.36845842
+    TriggerNameHash: 794136296
+    TransitionIndex: 3
+  - IsCrossFadeExit: 0
+    Layer: 4
+    OriginatingState: 1841173044
+    DestinationState: -2029424042
+    TransitionDuration: 0.25
+    TriggerNameHash: 1294398522
+    TransitionIndex: 4
+  - IsCrossFadeExit: 0
+    Layer: 4
+    OriginatingState: -1544672087
+    DestinationState: 1578859161
+    TransitionDuration: 0.25
+    TriggerNameHash: -1069963935
+    TransitionIndex: 2
+  - IsCrossFadeExit: 0
+    Layer: 4
+    OriginatingState: -1544672087
+    DestinationState: 1857847741
+    TransitionDuration: 0.036268935
+    TriggerNameHash: 794136296
+    TransitionIndex: 3
+  - IsCrossFadeExit: 0
+    Layer: 4
+    OriginatingState: -1544672087
+    DestinationState: -2029424042
+    TransitionDuration: 0.25
+    TriggerNameHash: 1294398522
+    TransitionIndex: 4
+  - IsCrossFadeExit: 0
+    Layer: 4
+    OriginatingState: -1854043849
+    DestinationState: 1857847741
+    TransitionDuration: 0.30162254
+    TriggerNameHash: 794136296
+    TransitionIndex: 1
+  - IsCrossFadeExit: 0
+    Layer: 4
+    OriginatingState: -1854043849
+    DestinationState: 1578859161
+    TransitionDuration: 0.24
+    TriggerNameHash: -1069963935
+    TransitionIndex: 2
+  - IsCrossFadeExit: 0
+    Layer: 4
+    OriginatingState: -1854043849
+    DestinationState: -2029424042
+    TransitionDuration: 0.25000003
+    TriggerNameHash: 1294398522
+    TransitionIndex: 3
+  - IsCrossFadeExit: 0
+    Layer: 4
+    OriginatingState: 1578859161
+    DestinationState: 1857847741
+    TransitionDuration: 0.2080481
+    TriggerNameHash: 794136296
+    TransitionIndex: 0
+  - IsCrossFadeExit: 0
+    Layer: 4
+    OriginatingState: 1578859161
+    DestinationState: -2029424042
+    TransitionDuration: 0.25
+    TriggerNameHash: 1294398522
+    TransitionIndex: 3
+  - IsCrossFadeExit: 0
+    Layer: 4
+    OriginatingState: -2029424042
+    DestinationState: 1857847741
+    TransitionDuration: 0.15872836
+    TriggerNameHash: 794136296
+    TransitionIndex: 0
+  - IsCrossFadeExit: 0
+    Layer: 4
+    OriginatingState: -2029424042
+    DestinationState: 1578859161
+    TransitionDuration: 0.25
+    TriggerNameHash: -1069963935
+    TransitionIndex: 3
+  AnimatorParameterEntries:
+    ParameterEntries:
+    - name: Cover
+      NameHash: 1288284609
+      Synchronize: 1
+      ParameterType: 4
+    - name: CoverLeftSide
+      NameHash: 2102231414
+      Synchronize: 1
+      ParameterType: 4
+    - name: Moving
+      NameHash: 949806512
+      Synchronize: 1
+      ParameterType: 4
+    - name: Running
+      NameHash: -526601997
+      Synchronize: 1
+      ParameterType: 4
+    - name: Speed
+      NameHash: -823668238
+      Synchronize: 1
+      ParameterType: 1
+    - name: Horizontal
+      NameHash: 475924382
+      Synchronize: 1
+      ParameterType: 1
+    - name: Vertical
+      NameHash: 1358960330
+      Synchronize: 1
+      ParameterType: 1
+    - name: IdleTurn
+      NameHash: -1548010464
+      Synchronize: 1
+      ParameterType: 1
+    - name: MovingTurn
+      NameHash: -943744224
+      Synchronize: 1
+      ParameterType: 1
+    - name: LandingIntensity
+      NameHash: 503726140
+      Synchronize: 1
+      ParameterType: 1
+    - name: ItemWieldingLeftHandPoseID
+      NameHash: 1321507369
+      Synchronize: 1
+      ParameterType: 1
+    - name: ItemWieldingRightHandPoseID
+      NameHash: -1795818251
+      Synchronize: 1
+      ParameterType: 1
+    - name: ItemsWieldingIdentifier
+      NameHash: -1425895588
+      Synchronize: 1
+      ParameterType: 3
+    - name: ItemEquiped
+      NameHash: -1009794150
+      Synchronize: 1
+      ParameterType: 4
+    - name: Grounded
+      NameHash: 862969536
+      Synchronize: 1
+      ParameterType: 4
+    - name: Jumping
+      NameHash: 1137391654
+      Synchronize: 1
+      ParameterType: 4
+    - name: FireMode
+      NameHash: -1787134389
+      Synchronize: 1
+      ParameterType: 4
+    - name: Crouched
+      NameHash: 1280700803
+      Synchronize: 1
+      ParameterType: 4
+    - name: Prone
+      NameHash: -1171648734
+      Synchronize: 1
+      ParameterType: 4
+    - name: Driving
+      NameHash: -568685857
+      Synchronize: 1
+      ParameterType: 4
+    - name: Die
+      NameHash: 20298039
+      Synchronize: 1
+      ParameterType: 4
+    - name: Punch
+      NameHash: -316645540
+      Synchronize: 1
+      ParameterType: 9
+    - name: Roll
+      NameHash: -1903714832
+      Synchronize: 1
+      ParameterType: 9
+    - name: Throw
+      NameHash: -1907200461
+      Synchronize: 1
+      ParameterType: 9
+    - name: ReloadRightWeapon
+      NameHash: -1069963935
+      Synchronize: 1
+      ParameterType: 9
+    - name: ReloadLeftWeapon
+      NameHash: 1294398522
+      Synchronize: 1
+      ParameterType: 9
+    - name: PullWeaponSlider
+      NameHash: 794136296
+      Synchronize: 1
+      ParameterType: 9
+    - name: TwoHandMeleeAttack
+      NameHash: -526411307
+      Synchronize: 1
+      ParameterType: 9
+    - name: OneHandMeleeAttack
+      NameHash: -1312878289
+      Synchronize: 1
+      ParameterType: 9
+    - name: DualHandMeleeAttack
+      NameHash: -766121365
+      Synchronize: 1
+      ParameterType: 9
+  AnimatorParametersExpanded: 0

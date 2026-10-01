@@ -106,10 +106,10 @@ public class JURagdollImpactDetector : MonoBehaviour
     Vector3 GetVelocity()
     {
         if (character.DriveVehicles.IsDriving && vehicleRb != null)
-            return vehicleRb.velocity;
+            return vehicleRb.linearVelocity;
 
         if (playerRb != null && !playerRb.isKinematic)
-            return playerRb.velocity;
+            return playerRb.linearVelocity;
 
         return (transform.position - lastPosition) / Time.fixedDeltaTime;
     }

@@ -20,7 +20,7 @@ namespace JUTPS.GravitySwitchSystem
                 TPSCharacter.UpDirection = Vector3.Lerp(TPSCharacter.UpDirection, TPSCharacter.GroundNormal == Vector3.zero ? Vector3.up : TPSCharacter.GroundNormal, Speed * Time.deltaTime);
                 if (TPSCharacter.IsGrounded && TPSCharacter.IsJumping == false && TPSCharacter.IsMoving)
                 {
-                    rb.velocity += TPSCharacter.GroundNormal == Vector3.zero ? -Vector3.up : -TPSCharacter.GroundNormal * ToGroundForce * Time.deltaTime;
+                    rb.linearVelocity += TPSCharacter.GroundNormal == Vector3.zero ? -Vector3.up : -TPSCharacter.GroundNormal * ToGroundForce * Time.deltaTime;
                 }
             }
             else

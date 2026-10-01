@@ -305,7 +305,7 @@ namespace JU.UI
             _managers.Add(parent, manager);
             Manager = manager;
 
-            Debug.Log($"[UI_BaseDamageIndicator] Created IndicatorManager for parent '{parent.name}' (instance id {parent.GetInstanceID()}).");
+            Debug.Log($"[UI_BaseDamageIndicator] Created IndicatorManager for parent '{parent.name}' (instance id {parent.GetEntityId()}).");
         }
 
         /// <summary>

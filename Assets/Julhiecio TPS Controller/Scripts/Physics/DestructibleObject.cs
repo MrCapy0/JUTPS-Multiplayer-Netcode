@@ -97,7 +97,7 @@ namespace JUTPS.DestructibleSystem
             }
             if (other.gameObject.TryGetComponent(out Rigidbody rb))
             {
-                if (rb.velocity.magnitude > 5f)
+                if (rb.linearVelocity.magnitude > 5f)
                 {
                     StartCoroutine(_DestroyObject());
                 }

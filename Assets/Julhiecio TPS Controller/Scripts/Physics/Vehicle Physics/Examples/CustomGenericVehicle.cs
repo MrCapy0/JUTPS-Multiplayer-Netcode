@@ -56,7 +56,7 @@ namespace JUTPS.VehicleSystem
             // Update vehicle orientation
             if (ForwardSpeed > 0.1f)
             {
-                Quaternion targetRotation = Quaternion.LookRotation(Vector3.ProjectOnPlane(RigidBody.velocity.normalized, Vector3.up));
+                Quaternion targetRotation = Quaternion.LookRotation(Vector3.ProjectOnPlane(RigidBody.linearVelocity.normalized, Vector3.up));
                 transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Mathf.Clamp01(Time.deltaTime * RotationSpeed));
             }
 

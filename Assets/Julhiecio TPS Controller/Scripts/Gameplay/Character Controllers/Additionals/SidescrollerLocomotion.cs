@@ -27,8 +27,8 @@ namespace JUTPS.ActionScripts
 
             if (BlockZPosition)
             {
-                Vector3 velocity = rb.velocity; velocity.z = 0;
-                rb.velocity = velocity;
+                Vector3 velocity = rb.linearVelocity; velocity.z = 0;
+                rb.linearVelocity = velocity;
 
                 transform.position = new Vector3(transform.position.x, transform.position.y, startZPosition);
             }

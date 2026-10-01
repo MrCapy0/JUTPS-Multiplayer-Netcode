@@ -87,7 +87,7 @@ namespace JU.SaveLoad
                 {
                     _character.rb.position = GetValue(POSITION_KEY, _character.rb.position);
                     _character.rb.rotation = GetValue(ROTATION_KEY, _character.rb.rotation);
-                    _character.rb.velocity = Vector3.zero;
+                    _character.rb.linearVelocity = Vector3.zero;
                     _character.rb.angularVelocity = Vector3.zero;
 
                     if (GetValue(CROUCH_KEY, false))

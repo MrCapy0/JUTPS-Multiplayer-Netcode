@@ -1023,7 +1023,7 @@ namespace JUTPS
                 Vector3 contactPoint = other.contacts[0].point;
                 Vector3 contactDirection = (contactPoint - transform.position).normalized;
 
-                Vector3 otherRbVelocity = rbOtherPhysicObject.velocity;
+                Vector3 otherRbVelocity = rbOtherPhysicObject.linearVelocity;
                 Vector3 otherRbMoveDirection = otherRbVelocity.normalized;
 
                 // -1 = a physical object is moving into character direction
@@ -1032,7 +1032,7 @@ namespace JUTPS
 
                 //Debug.Log(gameObject.name + " ◄ " + rbOtherPhysicObject.name + " ] Collision Pressure = " + CollisionPressure.ToString());
                 if (CollisionPressure > -0.1) return;
-                float physicalDamage = PhysicalDamageMultiplier * (rbOtherPhysicObject.velocity.magnitude / 20 * rbOtherPhysicObject.mass);
+                float physicalDamage = PhysicalDamageMultiplier * (rbOtherPhysicObject.linearVelocity.magnitude / 20 * rbOtherPhysicObject.mass);
 
                 // Do physical damage
                 if (physicalDamage > PhysicalDamageStartAt)

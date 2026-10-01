@@ -35,7 +35,7 @@ namespace JU.SaveLoad
             if (!_vehicle)
                 return;
 
-            _vehicleVelocity = _vehicle.RigidBody.velocity;
+            _vehicleVelocity = _vehicle.RigidBody.linearVelocity;
         }
 
         /// <inheritdoc/>
@@ -46,7 +46,7 @@ namespace JU.SaveLoad
                 yield return new WaitUntil(() => _vehicle.RigidBody != null);
                 _vehicle.RigidBody.position = GetValue(POSITION_KEY, _vehicle.RigidBody.position);
                 _vehicle.RigidBody.rotation = GetValue(ROTATION_KEY, _vehicle.RigidBody.rotation);
-                _vehicle.RigidBody.velocity = _saveVelocity ? GetValue(VELOCITY_KEY, _vehicle.RigidBody.velocity) : Vector3.zero;
+                _vehicle.RigidBody.linearVelocity = _saveVelocity ? GetValue(VELOCITY_KEY, _vehicle.RigidBody.linearVelocity) : Vector3.zero;
             }
 
             base.Load();

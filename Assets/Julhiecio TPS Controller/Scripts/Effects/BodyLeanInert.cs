@@ -35,7 +35,7 @@ namespace JUTPS.FX
             base.Awake();
             if (JUFootPlacer == null) JUFootPlacer = GetComponent<JUFootPlacement>();
             if (RootBone == null) RootBone = anim.GetBoneTransform(HumanBodyBones.Hips);
-            anim.updateMode = AnimatorUpdateMode.AnimatePhysics;
+            anim.updateMode = AnimatorUpdateMode.Fixed;
         }
         void OnAnimatorIK()
         {

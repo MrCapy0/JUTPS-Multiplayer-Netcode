@@ -427,7 +427,7 @@ public class JUDistanceOptimizer : MonoBehaviour
                     rb.isKinematic = true;
                     if (rb.isKinematic) return;
                     rb.angularVelocity = Vector3.zero;
-                    rb.velocity = Vector3.zero;
+                    rb.linearVelocity = Vector3.zero;
                 }
             }
 

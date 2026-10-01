@@ -35,7 +35,7 @@ namespace JUTPS.PhysicsScripts
             cap.center = Center;
             cap.radius = Radius;
             cap.height = Height;
-            cap.material = (PhysicMaterial)Resources.Load("Slip");
+            cap.material = (PhysicsMaterial)Resources.Load("Slip");
             outCapsuleCollider = cap;
         }
 

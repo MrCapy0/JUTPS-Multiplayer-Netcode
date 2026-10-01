@@ -128,7 +128,7 @@ namespace JUTPS
                 transform.localPosition = _startLocalPosition;
                 if (Rigidbody)
                 {
-                    Rigidbody.velocity = Vector3.zero;
+                    Rigidbody.linearVelocity = Vector3.zero;
                     Rigidbody.isKinematic = false;
                 }
             }

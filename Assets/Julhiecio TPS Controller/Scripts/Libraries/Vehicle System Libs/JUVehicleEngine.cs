@@ -157,7 +157,7 @@ namespace JUTPS.VehicleSystem
 				UpdatePlayerInputs();
 
 			// Update properties
-			Velocity = RigidBody.velocity;
+			Velocity = RigidBody.linearVelocity;
 			LocalVelocity = transform.InverseTransformDirection(Velocity);
 		}
 

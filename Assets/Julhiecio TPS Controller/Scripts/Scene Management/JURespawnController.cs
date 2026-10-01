@@ -183,7 +183,7 @@ namespace JUTPS
             {
                 rigidbody.useGravity = true;
                 rigidbody.isKinematic = false;
-                rigidbody.velocity = Vector3.up * player.GetComponent<Rigidbody>().velocity.y;
+                rigidbody.linearVelocity = Vector3.up * player.GetComponent<Rigidbody>().linearVelocity.y;
                 rigidbody.angularVelocity = Vector3.zero;
                 rigidbody.constraints = RigidbodyConstraints.None | RigidbodyConstraints.FreezeRotation;
             }
