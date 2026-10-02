@@ -5,9 +5,17 @@ using Unity.Netcode;
 using Unity.Netcode.Components;
 using UnityEngine;
 
+/// <summary>
+/// Netcode multiplayer synchronization for <see cref="JUCharacterController"/>.
+/// </summary>
+[RequireComponent(typeof(JUCharacterController))]
+[RequireComponent(typeof(NetworkObject))]
+[RequireComponent(typeof(NetworkTransform))]
+[RequireComponent(typeof(NetworkAnimator))]
+[RequireComponent(typeof(NetworkRigidbody))]
 public class JUNetcodeCharacterController : NetworkBehaviour
 {
-    public struct IKTransformData : INetworkSerializable, System.IEquatable<IKTransformData>
+    private struct IKTransformData : INetworkSerializable, System.IEquatable<IKTransformData>
     {
         public Vector3 Position;
         public Vector3 Rotation;
@@ -26,6 +34,11 @@ public class JUNetcodeCharacterController : NetworkBehaviour
     }
 
     private JUCharacterController _tps;
+
+    private NetworkTransform _networkTransform;
+    private NetworkAnimator _networkAnimator;
+    private NetworkRigidbody _networkRigidbody;
+
     private NetworkVariable<int> _leftItemId = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<int> _rightItemId = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
@@ -42,34 +55,133 @@ public class JUNetcodeCharacterController : NetworkBehaviour
     public GameObject UserInterfacePrefab;
     public TPSCameraController CameraControllerPrefab;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    /// <summary>
+    /// Gets the <see cref="JUCharacterController"/> component attached to this GameObject.
+    /// </summary>
+    public JUCharacterController CharacterController
+    {
+        get
+        {
+            if (_tps == null)
+            {
+                _tps = GetComponent<JUCharacterController>();
+            }
+
+            return _tps;
+        }
+    }
+
+    /// <summary>
+    /// Gets the <see cref="NetworkTransform"/> component attached to this GameObject.
+    /// </summary>
+    public NetworkTransform NetworkTransform
+    {
+        get
+        {
+            if (_networkTransform == null)
+            {
+                _networkTransform = GetComponent<NetworkTransform>();
+            }
+
+            return _networkTransform;
+        }
+    }
+
+    /// <summary>
+    /// Gets the <see cref="NetworkAnimator"/> component attached to this GameObject.
+    /// </summary>
+    public NetworkAnimator NetworkAnimator
+    {
+        get
+        {
+            if (_networkAnimator == null)
+            {
+                _networkAnimator = GetComponent<NetworkAnimator>();
+            }
+
+            return _networkAnimator;
+        }
+    }
+
+    /// <summary>
+    /// Gets the <see cref="NetworkRigidbody"/> component attached to this GameObject.
+    /// </summary>
+    public NetworkRigidbody NetworkRigidbody
+    {
+        get
+        {
+            if (_networkRigidbody == null)
+            {
+                _networkRigidbody = GetComponent<NetworkRigidbody>();
+            }
+
+            return _networkRigidbody;
+        }
+    }
+
+    private void Reset()
+    {
+        if (Application.isPlaying == false)
+        {
+            if (NetworkObject == null)
+            {
+                gameObject.AddComponent<NetworkObject>();
+            }
+
+            if (NetworkTransform == null)
+            {
+                _networkTransform = gameObject.AddComponent<NetworkTransform>();
+            }
+
+            if (NetworkAnimator == null)
+            {
+                _networkAnimator = gameObject.AddComponent<NetworkAnimator>();
+            }
+
+            if (NetworkRigidbody == null)
+            {
+                _networkRigidbody = gameObject.AddComponent<NetworkRigidbody>();
+            }
+        }
+
+        EnsureSettings();
+    }
+
+    private void OnValidate()
+    {
+        EnsureSettings();
+    }
+
+    private void Awake()
+    {
+    }
+
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
 
-        _tps = gameObject.GetComponent<JUCharacterController>();
         if (IsOwner)
         {
-            if (_tps.IsPlayer)
+            if (CharacterController.IsPlayer)
             {
                 Instantiate(UserInterfacePrefab);
                 var cameraController = Instantiate(CameraControllerPrefab);
-                _tps.MyPivotCamera = cameraController;
+                CharacterController.MyPivotCamera = cameraController;
             }
         }
         else
         {
-            _tps.tag = "Untagged";
-            _tps.enabled = false;
-            _tps.MyPivotCamera = null;
-            _tps.UseDefaultControllerInput = false;
+            CharacterController.tag = "Untagged";
+            CharacterController.enabled = false;
+            CharacterController.MyPivotCamera = null;
+            CharacterController.UseDefaultControllerInput = false;
 
             StartCoroutine(InitialSwitch());
 
-            _tps.IKPositionLeftHand.SetParent(_tps.transform);
-            _tps.IKPositionRightHand.SetParent(_tps.transform);
-            _tps.LeftHandIKPositionTarget.SetParent(_tps.transform);
-            _tps.RightHandIKPositionTarget.SetParent(_tps.transform);
+            CharacterController.IKPositionLeftHand.SetParent(CharacterController.transform);
+            CharacterController.IKPositionRightHand.SetParent(CharacterController.transform);
+            CharacterController.LeftHandIKPositionTarget.SetParent(CharacterController.transform);
+            CharacterController.RightHandIKPositionTarget.SetParent(CharacterController.transform);
         }
 
         _leftItemId.OnValueChanged += OnItemSwitched;
@@ -88,31 +200,47 @@ public class JUNetcodeCharacterController : NetworkBehaviour
         UpdateIfNonOwner();
     }
 
+    private void EnsureSettings()
+    {
+        if (Application.isPlaying == false)
+        {
+            NetworkTransform.AuthorityMode = NetworkTransform.AuthorityModes.Owner;
+            NetworkAnimator.AuthorityMode = NetworkAnimator.AuthorityModes.Owner;
+            NetworkAnimator.Animator = GetComponent<Animator>();
+        }
+    }
+
     private void UpdateIfOwner()
     {
-        if (!IsOwner)
+        if (IsOwner == false)
+        {
             return;
+        }
 
         // Updateitem in use.
-        if (!_tps.HoldableItemInUseRightHand)
+        if (!CharacterController.HoldableItemInUseRightHand)
+        {
             _rightItemId.Value = -1;
+        }
         else
-            _rightItemId.Value = _tps.HoldableItemInUseRightHand.ItemSwitchID;
+        {
+            _rightItemId.Value = CharacterController.HoldableItemInUseRightHand.ItemSwitchID;
+        }
 
         // Update animator IK weights.
-        _lookWeightIK.Value = _tps.LookWeightIK;
-        _armsWeightIK.Value = _tps.ArmsWeightIK;
-        _leftHandWeightIK.Value = _tps.LeftHandWeightIK;
-        _rightHandWeightIK.Value = _tps.RightHandWeightIK;
+        _lookWeightIK.Value = CharacterController.LookWeightIK;
+        _armsWeightIK.Value = CharacterController.ArmsWeightIK;
+        _leftHandWeightIK.Value = CharacterController.LeftHandWeightIK;
+        _rightHandWeightIK.Value = CharacterController.RightHandWeightIK;
 
         // Update IK positions for hands.
-        var leftHandPos = _tps.IKPositionLeftHand.position;
-        var leftHandRot = _tps.IKPositionLeftHand.eulerAngles;
-        var rightHandPos = _tps.IKPositionRightHand.position;
-        var rightHandRot = _tps.IKPositionRightHand.eulerAngles;
+        Vector3 leftHandPos = CharacterController.IKPositionLeftHand.position;
+        Vector3 leftHandRot = CharacterController.IKPositionLeftHand.eulerAngles;
+        Vector3 rightHandPos = CharacterController.IKPositionRightHand.position;
+        Vector3 rightHandRot = CharacterController.IKPositionRightHand.eulerAngles;
 
-        leftHandPos = _tps.transform.InverseTransformPoint(leftHandPos);
-        rightHandPos = _tps.transform.InverseTransformPoint(rightHandPos);
+        leftHandPos = CharacterController.transform.InverseTransformPoint(leftHandPos);
+        rightHandPos = CharacterController.transform.InverseTransformPoint(rightHandPos);
 
         _leftHandIK.Value = new IKTransformData()
         {
@@ -126,66 +254,73 @@ public class JUNetcodeCharacterController : NetworkBehaviour
             Rotation = rightHandRot,
         };
 
-        _lookAtPosition.Value = _tps.GetLookPosition();
+        _lookAtPosition.Value = CharacterController.GetLookPosition();
     }
 
     private void UpdateIfNonOwner()
     {
         if (IsOwner)
+        {
             return;
+        }
 
-        _tps.IKPositionLeftHand.localPosition = _leftHandIK.Value.Position;
-        _tps.IKPositionLeftHand.eulerAngles = _leftHandIK.Value.Rotation;
-        _tps.LeftHandIKPositionTarget.localPosition = _tps.IKPositionLeftHand.localPosition;
-        _tps.LeftHandIKPositionTarget.localEulerAngles = _tps.IKPositionLeftHand.localEulerAngles;
+        CharacterController.IKPositionLeftHand.localPosition = _leftHandIK.Value.Position;
+        CharacterController.IKPositionLeftHand.eulerAngles = _leftHandIK.Value.Rotation;
+        CharacterController.LeftHandIKPositionTarget.localPosition = CharacterController.IKPositionLeftHand.localPosition;
+        CharacterController.LeftHandIKPositionTarget.localEulerAngles = CharacterController.IKPositionLeftHand.localEulerAngles;
 
-        _tps.IKPositionRightHand.localPosition = _rightHandIK.Value.Position;
-        _tps.IKPositionRightHand.eulerAngles = _rightHandIK.Value.Rotation;
-        _tps.RightHandIKPositionTarget.localPosition = _tps.IKPositionRightHand.localPosition;
-        _tps.RightHandIKPositionTarget.localEulerAngles = _tps.IKPositionRightHand.localEulerAngles;
+        CharacterController.IKPositionRightHand.localPosition = _rightHandIK.Value.Position;
+        CharacterController.IKPositionRightHand.eulerAngles = _rightHandIK.Value.Rotation;
+        CharacterController.RightHandIKPositionTarget.localPosition = CharacterController.IKPositionRightHand.localPosition;
+        CharacterController.RightHandIKPositionTarget.localEulerAngles = CharacterController.IKPositionRightHand.localEulerAngles;
 
-        _tps.LookAtPosition = _lookAtPosition.Value;
+        CharacterController.LookAtPosition = _lookAtPosition.Value;
     }
 
-    void OnAnimatorIK(int layerIndex)
+    private void OnAnimatorIK(int layerIndex)
     {
         if (IsOwner)
             return;
 
         // Apply IK weights for non-owner characters.
 
-        _tps.LeftHandWeightIK = _leftHandWeightIK.Value;
-        _tps.RightHandWeightIK = _rightHandWeightIK.Value;
-        _tps.LookWeightIK = _lookWeightIK.Value;
-        _tps.ArmsWeightIK = _armsWeightIK.Value;
+        CharacterController.LeftHandWeightIK = _leftHandWeightIK.Value;
+        CharacterController.RightHandWeightIK = _rightHandWeightIK.Value;
+        CharacterController.LookWeightIK = _lookWeightIK.Value;
+        CharacterController.ArmsWeightIK = _armsWeightIK.Value;
 
-        if (_tps.IsDead || _tps.InverseKinematics == false)
+        if (CharacterController.IsDead || CharacterController.InverseKinematics == false)
             return;
 
-        if (_tps.IsRolling == false && _tps.IsDriving == false)
+        if (CharacterController.IsRolling == false && CharacterController.IsDriving == false)
         {
-            _tps.LeftHandToRespectiveIKPosition(_tps.LeftHandWeightIK, _tps.LeftHandWeightIK * _tps.LeftElbowAdjustWeight);
-            _tps.RightHandToRespectiveIKPosition(_tps.RightHandWeightIK, _tps.RightHandWeightIK * _tps.RightElbowAdjustWeight);
+            CharacterController.LeftHandToRespectiveIKPosition(CharacterController.LeftHandWeightIK, CharacterController.LeftHandWeightIK * CharacterController.LeftElbowAdjustWeight);
+            CharacterController.RightHandToRespectiveIKPosition(CharacterController.RightHandWeightIK, CharacterController.RightHandWeightIK * CharacterController.RightElbowAdjustWeight);
 
-            Vector3 LookingPosition = _tps.GetLookPosition();
+            Vector3 LookingPosition = CharacterController.GetLookPosition();
 
             // Body Look At IK
-            float ProneBodyWeight = (_tps.LookAtBodyWeight == 0) ? 0 : 0.1f;
-            float BodyWeight = _tps.IsProne ? ProneBodyWeight : _tps.LookAtBodyWeight;
+            float ProneBodyWeight = (CharacterController.LookAtBodyWeight == 0) ? 0 : 0.1f;
+            float BodyWeight = CharacterController.IsProne ? ProneBodyWeight : CharacterController.LookAtBodyWeight;
 
             float LookingIntensity = Vector3.Dot(transform.forward, (LookingPosition - transform.position).normalized);
-            _tps.LookAtIK(LookingPosition, LookingIntensity * _tps.LookWeightIK, BodyWeight, _tps.HeadIKBodyWeight);
+            CharacterController.LookAtIK(LookingPosition, LookingIntensity * CharacterController.LookWeightIK, BodyWeight, CharacterController.HeadIKBodyWeight);
         }
     }
 
     private void OnItemSwitched(int previousValue, int newValue)
     {
-        _tps.SwitchToItem(_rightItemId.Value, true);
+        if (IsOwner)
+        {
+            return;
+        }
+
+        CharacterController.SwitchToItem(_rightItemId.Value, true);
     }
 
     private IEnumerator InitialSwitch()
     {
         yield return new WaitForSeconds(0.2f);
-        _tps.SwitchToItem(_rightItemId.Value, true);
+        CharacterController.SwitchToItem(_rightItemId.Value, true);
     }
 }
