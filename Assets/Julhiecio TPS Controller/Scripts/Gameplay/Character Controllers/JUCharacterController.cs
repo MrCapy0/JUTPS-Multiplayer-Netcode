@@ -51,7 +51,7 @@ namespace JUTPS
             ItemToEquipOnStart = -1;
         }
 
-        
+
         protected override void Start()
         {
             IEnumerator EquipeSelectedItem()
@@ -561,6 +561,17 @@ namespace JUTPS
         protected virtual void Movement()
         {
             LocomotionModeController();
+
+            if (IsCrouched)
+            {
+                if (IsRunning && AutoRun == true)
+                {
+                    CanSprint = true;
+                    IsRunning = false;
+                    ReachedMaxSprintSpeed = false;
+                    CurrentSprintSpeedIntensity = 0;
+                }
+            }
 
             //Ragdoll Controll
             if (Ragdoller != null)

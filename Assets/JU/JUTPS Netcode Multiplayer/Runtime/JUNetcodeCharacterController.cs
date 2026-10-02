@@ -11,7 +11,6 @@ using UnityEngine;
 [RequireComponent(typeof(JUCharacterController))]
 [RequireComponent(typeof(NetworkObject))]
 [RequireComponent(typeof(NetworkTransform))]
-[RequireComponent(typeof(NetworkAnimator))]
 [RequireComponent(typeof(NetworkRigidbody))]
 public class JUNetcodeCharacterController : NetworkBehaviour
 {
@@ -36,21 +35,23 @@ public class JUNetcodeCharacterController : NetworkBehaviour
     private JUCharacterController _tps;
 
     private NetworkTransform _networkTransform;
-    private NetworkAnimator _networkAnimator;
     private NetworkRigidbody _networkRigidbody;
 
     private NetworkVariable<int> _leftItemId = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<int> _rightItemId = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
-    private NetworkVariable<Vector3> _lookAtPosition = new(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
-    private NetworkVariable<float> _lookWeightIK = new(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<float> _armsWeightIK = new(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<float> _leftHandWeightIK = new(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<float> _rightHandWeightIK = new(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
-    private NetworkVariable<IKTransformData> _leftHandIK = new(new IKTransformData(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<IKTransformData> _rightHandIK = new(new IKTransformData(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<Vector2> _netMoveDirection = new(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<bool> _netRunning = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<bool> _netSprinting = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<bool> _netCrouch = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<bool> _netProne = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<bool> _netRolling = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<bool> _netAiming = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<bool> _netFireMode = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<bool> _netFireModeIk = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<bool> _netRagdolled = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<Vector3> _netLookAtPosition = new(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     public GameObject UserInterfacePrefab;
     public TPSCameraController CameraControllerPrefab;
@@ -88,22 +89,6 @@ public class JUNetcodeCharacterController : NetworkBehaviour
     }
 
     /// <summary>
-    /// Gets the <see cref="NetworkAnimator"/> component attached to this GameObject.
-    /// </summary>
-    public NetworkAnimator NetworkAnimator
-    {
-        get
-        {
-            if (_networkAnimator == null)
-            {
-                _networkAnimator = GetComponent<NetworkAnimator>();
-            }
-
-            return _networkAnimator;
-        }
-    }
-
-    /// <summary>
     /// Gets the <see cref="NetworkRigidbody"/> component attached to this GameObject.
     /// </summary>
     public NetworkRigidbody NetworkRigidbody
@@ -131,11 +116,6 @@ public class JUNetcodeCharacterController : NetworkBehaviour
             if (NetworkTransform == null)
             {
                 _networkTransform = gameObject.AddComponent<NetworkTransform>();
-            }
-
-            if (NetworkAnimator == null)
-            {
-                _networkAnimator = gameObject.AddComponent<NetworkAnimator>();
             }
 
             if (NetworkRigidbody == null)
@@ -172,7 +152,6 @@ public class JUNetcodeCharacterController : NetworkBehaviour
         else
         {
             CharacterController.tag = "Untagged";
-            CharacterController.enabled = false;
             CharacterController.MyPivotCamera = null;
             CharacterController.UseDefaultControllerInput = false;
 
@@ -205,8 +184,6 @@ public class JUNetcodeCharacterController : NetworkBehaviour
         if (Application.isPlaying == false)
         {
             NetworkTransform.AuthorityMode = NetworkTransform.AuthorityModes.Owner;
-            NetworkAnimator.AuthorityMode = NetworkAnimator.AuthorityModes.Owner;
-            NetworkAnimator.Animator = GetComponent<Animator>();
         }
     }
 
@@ -227,34 +204,17 @@ public class JUNetcodeCharacterController : NetworkBehaviour
             _rightItemId.Value = CharacterController.HoldableItemInUseRightHand.ItemSwitchID;
         }
 
-        // Update animator IK weights.
-        _lookWeightIK.Value = CharacterController.LookWeightIK;
-        _armsWeightIK.Value = CharacterController.ArmsWeightIK;
-        _leftHandWeightIK.Value = CharacterController.LeftHandWeightIK;
-        _rightHandWeightIK.Value = CharacterController.RightHandWeightIK;
-
-        // Update IK positions for hands.
-        Vector3 leftHandPos = CharacterController.IKPositionLeftHand.position;
-        Vector3 leftHandRot = CharacterController.IKPositionLeftHand.eulerAngles;
-        Vector3 rightHandPos = CharacterController.IKPositionRightHand.position;
-        Vector3 rightHandRot = CharacterController.IKPositionRightHand.eulerAngles;
-
-        leftHandPos = CharacterController.transform.InverseTransformPoint(leftHandPos);
-        rightHandPos = CharacterController.transform.InverseTransformPoint(rightHandPos);
-
-        _leftHandIK.Value = new IKTransformData()
-        {
-            Position = leftHandPos,
-            Rotation = leftHandRot,
-        };
-
-        _rightHandIK.Value = new IKTransformData()
-        {
-            Position = rightHandPos,
-            Rotation = rightHandRot,
-        };
-
-        _lookAtPosition.Value = CharacterController.GetLookPosition();
+        _netRolling.Value = CharacterController.IsRolling;
+        _netCrouch.Value = CharacterController.IsCrouched;
+        _netProne.Value = CharacterController.IsProne;
+        _netSprinting.Value = CharacterController.IsSprinting;
+        _netRagdolled.Value = CharacterController.IsRagdolled;
+        _netRunning.Value = CharacterController.IsRunning;
+        _netAiming.Value = CharacterController.IsAiming;
+        _netFireMode.Value = CharacterController.FiringMode;
+        _netFireModeIk.Value = CharacterController.FiringModeIK;
+        _netMoveDirection.Value = new Vector3(CharacterController.HorizontalX, CharacterController.VerticalY);
+        _netLookAtPosition.Value = CharacterController.GetLookPosition();
     }
 
     private void UpdateIfNonOwner()
@@ -264,17 +224,70 @@ public class JUNetcodeCharacterController : NetworkBehaviour
             return;
         }
 
-        CharacterController.IKPositionLeftHand.localPosition = _leftHandIK.Value.Position;
-        CharacterController.IKPositionLeftHand.eulerAngles = _leftHandIK.Value.Rotation;
         CharacterController.LeftHandIKPositionTarget.localPosition = CharacterController.IKPositionLeftHand.localPosition;
         CharacterController.LeftHandIKPositionTarget.localEulerAngles = CharacterController.IKPositionLeftHand.localEulerAngles;
 
-        CharacterController.IKPositionRightHand.localPosition = _rightHandIK.Value.Position;
-        CharacterController.IKPositionRightHand.eulerAngles = _rightHandIK.Value.Rotation;
         CharacterController.RightHandIKPositionTarget.localPosition = CharacterController.IKPositionRightHand.localPosition;
         CharacterController.RightHandIKPositionTarget.localEulerAngles = CharacterController.IKPositionRightHand.localEulerAngles;
 
-        CharacterController.LookAtPosition = _lookAtPosition.Value;
+        CharacterController.LookAtPosition = _netLookAtPosition.Value;
+
+        if (CharacterController.IsCrouched != _netCrouch.Value)
+        {
+            if (_netCrouch.Value)
+            {
+                CharacterController._Crouch();
+            }
+            else
+            {
+                CharacterController._GetUp();
+            }
+        }
+
+        if (CharacterController.IsProne != _netProne.Value)
+        {
+            if (_netProne.Value)
+            {
+                CharacterController._Prone();
+            }
+            else
+            {
+                // In the controller GetUp is called twice idk why.
+                CharacterController._GetUp();
+                CharacterController._GetUp();
+            }
+        }
+
+        if (CharacterController.IsRolling != _netRolling.Value)
+        {
+            if (_netRolling.Value)
+            {
+                CharacterController._Roll();
+            }
+        }
+
+        CharacterController.IsRunning = _netRunning.Value;
+        CharacterController.IsSprinting = _netSprinting.Value;
+        CharacterController.IsRagdolled = _netRagdolled.Value;
+        CharacterController.IsAiming = _netAiming.Value;
+        CharacterController.FiringMode = _netFireMode.Value;
+        CharacterController.FiringModeIK = _netFireModeIk.Value;
+
+        Vector2 moveDirection = _netMoveDirection.Value;
+        CharacterController.HorizontalX = moveDirection.x;
+        CharacterController.VerticalY = moveDirection.y;
+
+        if (CharacterController.Ragdoller)
+        {
+            if (_netRagdolled.Value && CharacterController.Ragdoller.State == JUTPS.PhysicsScripts.AdvancedRagdollController.RagdollState.Animated)
+            {
+                CharacterController.Ragdoller.State = JUTPS.PhysicsScripts.AdvancedRagdollController.RagdollState.Ragdolled;
+            }
+            else if (_netRagdolled.Value == false && CharacterController.Ragdoller.State == JUTPS.PhysicsScripts.AdvancedRagdollController.RagdollState.Ragdolled)
+            {
+                CharacterController.Ragdoller.State = JUTPS.PhysicsScripts.AdvancedRagdollController.RagdollState.BlendToAnim;
+            }
+        }
     }
 
     private void OnAnimatorIK(int layerIndex)
@@ -283,12 +296,6 @@ public class JUNetcodeCharacterController : NetworkBehaviour
             return;
 
         // Apply IK weights for non-owner characters.
-
-        CharacterController.LeftHandWeightIK = _leftHandWeightIK.Value;
-        CharacterController.RightHandWeightIK = _rightHandWeightIK.Value;
-        CharacterController.LookWeightIK = _lookWeightIK.Value;
-        CharacterController.ArmsWeightIK = _armsWeightIK.Value;
-
         if (CharacterController.IsDead || CharacterController.InverseKinematics == false)
             return;
 
