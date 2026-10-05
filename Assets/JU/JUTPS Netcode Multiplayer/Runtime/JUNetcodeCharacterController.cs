@@ -1,4 +1,3 @@
-using System.Collections;
 using JUTPS;
 using JUTPS.CameraSystems;
 using Unity.Netcode;
@@ -21,9 +20,7 @@ namespace JU.TPS.Netcode
         private NetworkTransform _networkTransform;
         private NetworkRigidbody _networkRigidbody;
 
-        private NetworkVariable<int> _leftItemId = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         private NetworkVariable<int> _rightItemId = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
 
         private NetworkVariable<Vector2> _netMoveDirection = new(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         private NetworkVariable<bool> _netRunning = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -139,22 +136,15 @@ namespace JU.TPS.Netcode
                 CharacterController.MyPivotCamera = null;
                 CharacterController.UseDefaultControllerInput = false;
 
-                StartCoroutine(InitialSwitch());
-
                 CharacterController.IKPositionLeftHand.SetParent(CharacterController.transform);
                 CharacterController.IKPositionRightHand.SetParent(CharacterController.transform);
                 CharacterController.LeftHandIKPositionTarget.SetParent(CharacterController.transform);
                 CharacterController.RightHandIKPositionTarget.SetParent(CharacterController.transform);
             }
-
-            _leftItemId.OnValueChanged += OnItemSwitched;
-            _rightItemId.OnValueChanged += OnItemSwitched;
         }
 
         public override void OnNetworkDespawn()
         {
-            _leftItemId.OnValueChanged -= OnItemSwitched;
-            _rightItemId.OnValueChanged -= OnItemSwitched;
         }
 
         private void Update()
@@ -272,6 +262,11 @@ namespace JU.TPS.Netcode
                     CharacterController.Ragdoller.State = JUTPS.PhysicsScripts.AdvancedRagdollController.RagdollState.BlendToAnim;
                 }
             }
+
+            if (CharacterController.Inventory.CurrentRightHandItemID != _rightItemId.Value)
+            {
+                CharacterController.SwitchToItem(_rightItemId.Value, true);
+            }
         }
 
         private void OnAnimatorIK(int layerIndex)
@@ -297,22 +292,6 @@ namespace JU.TPS.Netcode
                 float LookingIntensity = Vector3.Dot(transform.forward, (LookingPosition - transform.position).normalized);
                 CharacterController.LookAtIK(LookingPosition, LookingIntensity * CharacterController.LookWeightIK, BodyWeight, CharacterController.HeadIKBodyWeight);
             }
-        }
-
-        private void OnItemSwitched(int previousValue, int newValue)
-        {
-            if (IsOwner)
-            {
-                return;
-            }
-
-            CharacterController.SwitchToItem(_rightItemId.Value, true);
-        }
-
-        private IEnumerator InitialSwitch()
-        {
-            yield return new WaitForSeconds(0.2f);
-            CharacterController.SwitchToItem(_rightItemId.Value, true);
         }
     }
 }
