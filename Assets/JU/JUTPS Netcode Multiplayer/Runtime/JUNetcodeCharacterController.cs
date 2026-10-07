@@ -32,7 +32,11 @@ namespace JU.TPS.Netcode
         private NetworkVariable<bool> _netFireMode = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         private NetworkVariable<bool> _netFireModeIk = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         private NetworkVariable<bool> _netRagdolled = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private NetworkVariable<int> _netMeleeAttackRequests = new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         private NetworkVariable<Vector3> _netLookAtPosition = new(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+        private bool _meleeAttackRequestConsumed;
+        private float _meleeAttackRequestResetTime;
 
         public GameObject UserInterfacePrefab;
         public TPSCameraController CameraControllerPrefab;
@@ -189,6 +193,22 @@ namespace JU.TPS.Netcode
             _netFireModeIk.Value = CharacterController.FiringModeIK;
             _netMoveDirection.Value = new Vector3(CharacterController.HorizontalX, CharacterController.VerticalY);
 
+            bool meleeAttackInput = CharacterController.EnableMeleeWeaponsAttacks ? CharacterController.Inputs.IsMeleeWeaponAttackTriggered : false;
+            bool punchInputDown = CharacterController.EnablePunchAttacks ? CharacterController.Inputs.IsPunchTriggered : false;
+
+            if (meleeAttackInput == true || punchInputDown == true)
+            {
+                if (CharacterController.RightHandWeapon == null)
+                {
+                    _netMeleeAttackRequests.Value += 1;
+                    _meleeAttackRequestResetTime = Time.time + 2f / NetworkManager.NetworkConfig.TickRate;
+                }
+            }
+            else if (_netMeleeAttackRequests.Value > 0 && Time.time >= _meleeAttackRequestResetTime)
+            {
+                _netMeleeAttackRequests.Value -= 1;
+            }
+
             Vector3 lookAtPosition = CharacterController.GetLookPosition();
             if (CharacterController.RightHandWeapon != null && CharacterController.FiringModeIK && CharacterController.RightHandWeapon.CameraRaycastHit.point != Vector3.zero)
             {
@@ -259,6 +279,19 @@ namespace JU.TPS.Netcode
             CharacterController.FiringModeIK = _netFireModeIk.Value;
 
             Vector2 moveDirection = _netMoveDirection.Value;
+            bool useMeleeAttack = _netMeleeAttackRequests.Value > 0 && !_meleeAttackRequestConsumed;
+
+            if (useMeleeAttack == true)
+            {
+                moveDirection = Vector2.zero;
+                CharacterController.DefaultUseOfAllItems(true, true, true, false, false, false, true);
+                _meleeAttackRequestConsumed = true;
+            }
+            else if (_netMeleeAttackRequests.Value <= 0)
+            {
+                _meleeAttackRequestConsumed = false;
+            }
+
             CharacterController.HorizontalX = moveDirection.x;
             CharacterController.VerticalY = moveDirection.y;
 
@@ -274,7 +307,7 @@ namespace JU.TPS.Netcode
                 }
             }
 
-            if (CharacterController.Inventory.CurrentRightHandItemID != _rightItemId.Value)
+            if (useMeleeAttack == false && CharacterController.Inventory.CurrentRightHandItemID != _rightItemId.Value)
             {
                 CharacterController.SwitchToItem(_rightItemId.Value, true);
             }

@@ -5,7 +5,7 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/JU Camera/Samples/New Scene.unity
     guid: 863cf97cf759a464c96693d55e296e58
   - enabled: 1
