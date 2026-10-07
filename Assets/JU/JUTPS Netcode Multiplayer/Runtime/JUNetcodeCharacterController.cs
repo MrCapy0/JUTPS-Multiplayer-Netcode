@@ -188,7 +188,18 @@ namespace JU.TPS.Netcode
             _netFireMode.Value = CharacterController.FiringMode;
             _netFireModeIk.Value = CharacterController.FiringModeIK;
             _netMoveDirection.Value = new Vector3(CharacterController.HorizontalX, CharacterController.VerticalY);
-            _netLookAtPosition.Value = CharacterController.GetLookPosition();
+
+            Vector3 lookAtPosition = CharacterController.GetLookPosition();
+            if (CharacterController.RightHandWeapon != null && CharacterController.FiringModeIK && CharacterController.RightHandWeapon.CameraRaycastHit.point != Vector3.zero)
+            {
+                RaycastHit hit = CharacterController.RightHandWeapon.CameraRaycastHit;
+                Vector3 hitDirection = (hit.point - CharacterController.RightHandWeapon.Shoot_Position.position).normalized;
+                if (Vector3.Dot(hitDirection, CharacterController.RightHandWeapon.Shoot_Position.forward) > 0.7f)
+                {
+                    lookAtPosition = hit.point;
+                }
+            }
+            _netLookAtPosition.Value = lookAtPosition;
         }
 
         private void UpdateIfNonOwner()

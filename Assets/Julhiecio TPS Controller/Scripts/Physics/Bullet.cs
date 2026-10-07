@@ -160,6 +160,16 @@ namespace JUTPS.WeaponSystem
                 //Check Character and Bones Layers
                 if (col.gameObject.layer == 15 || col.gameObject.layer == 9)
                 {
+                    // >>> Ignore Owner Sliping Capsule
+                    if (col.gameObject.TryGetComponent(out JUTPS.PhysicsScripts.JUSlipCapsule slipCapsule))
+                    {
+                        if (slipCapsule.defaultCapsuleCollider.gameObject == Owner.gameObject)
+                        {
+                            Physics.IgnoreCollision(slipCapsule.slipCapsule, _selfCollider);
+                            return;
+                        }
+                    }
+
                     // If there are bones and damageable parts -> ignore primary capsule collider
                     if (col.gameObject.layer == 9 && col.gameObject.GetComponentInChildren<DamageableBodyPart>() != null)
                     {

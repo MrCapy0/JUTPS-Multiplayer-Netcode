@@ -857,7 +857,41 @@ namespace JUTPS.InventorySystem
             }
             return item_id;
         }
+        public int GetLastUnlockedItemID(int CurrentID, bool LocalID = true, bool RightHand = true)
+        {
+            int item_id;
 
+            if (LocalID)
+            {
+                if (RightHand)
+                {
+                    item_id = LastUnlockedItemLocalIndexRightHand(CurrentID);
+                }
+                else
+                {
+                    item_id = LastUnlockedItemLocalIndexLeftHand(CurrentID);
+                }
+            }
+            else
+            {
+                if (RightHand)
+                {
+                    item_id = GetGlobalItemSwitchID(
+                        item: HoldableItensRightHand[LastUnlockedItemLocalIndexRightHand(CurrentID)],
+                        inventory: this
+                    );
+                }
+                else
+                {
+                    item_id = GetGlobalItemSwitchID(
+                        item: HoldableItensLeftHand[LastUnlockedItemLocalIndexLeftHand(CurrentID)],
+                        inventory: this
+                    );
+                }
+            }
+
+            return item_id;
+        }
 
         public void SetSequentialSlotItem(SequentialSlotsEnum slot, JUItem item)
         {
@@ -968,7 +1002,6 @@ namespace JUTPS.InventorySystem
                 if (tries >= HoldableItensRightHand.Length)
                     item_id = -1;
             }
-
             for (int i = CurrentID; i > -1; i--)
             {
                 if (i > -1 && i != CurrentID)
@@ -998,8 +1031,88 @@ namespace JUTPS.InventorySystem
             }
             return item_id;
         }
+        protected int LastUnlockedItemLocalIndexRightHand(int CurrentID)
+        {
+            int item_id = -1;
 
+            // Force start from a unlocked item if have.
+            if (JUCharacter && !JUCharacter.AllowBareHands)
+            {
+                item_id = Mathf.Min(CurrentID + 1, HoldableItensRightHand.Length - 1);
 
+                var tries = 0; // Used to avoid infinite loop if does not have unlocked items.
+                while (tries < HoldableItensRightHand.Length)
+                {
+                    if (HoldableItensRightHand[item_id].Unlocked && HoldableItensRightHand[item_id].ItemQuantity > 0)
+                        break;
+
+                    item_id += 1;
+                    if (item_id >= HoldableItensRightHand.Length)
+                        item_id = 0;
+
+                    tries += 1;
+                }
+
+                // Does not have an unlocked item.
+                if (tries >= HoldableItensRightHand.Length)
+                    item_id = -1;
+            }
+
+            for (int i = HoldableItensRightHand.Length; i > 0; i--)
+            {
+                if (i < HoldableItensRightHand.Length && i != CurrentID)
+                {
+                    if (HoldableItensRightHand[i].Unlocked == true)
+                    {
+                        item_id = HoldableItensRightHand[i].ItemSwitchID;
+                        return HoldableItensRightHand[i].ItemSwitchID;
+                    }
+                }
+            }
+
+            return item_id;
+        }
+        protected int LastUnlockedItemLocalIndexLeftHand(int CurrentID)
+        {
+            int item_id = -1;
+
+            // Force start from a unlocked item if have.
+            if (JUCharacter && !JUCharacter.AllowBareHands)
+            {
+                item_id = Mathf.Min(CurrentID + 1, HoldableItensLeftHand.Length - 1);
+
+                var tries = 0; // Used to avoid infinite loop if does not have unlocked items.
+                while (tries < HoldableItensLeftHand.Length)
+                {
+                    if (HoldableItensLeftHand[item_id].Unlocked && HoldableItensLeftHand[item_id].ItemQuantity > 0)
+                        break;
+
+                    item_id += 1;
+                    if (item_id >= HoldableItensLeftHand.Length)
+                        item_id = 0;
+
+                    tries += 1;
+                }
+
+                // Does not have an unlocked item.
+                if (tries >= HoldableItensLeftHand.Length)
+                    item_id = -1;
+            }
+
+            for (int i = CurrentID; i < HoldableItensLeftHand.Length; i++)
+            {
+                if (i < HoldableItensLeftHand.Length && i != CurrentID)
+                {
+                    if (HoldableItensLeftHand[i].Unlocked == true)
+                    {
+                        item_id = HoldableItensLeftHand[i].ItemSwitchID;
+                        return HoldableItensLeftHand[i].ItemSwitchID;
+                    }
+                }
+            }
+
+            return item_id;
+        }
         public void RefreshInBodyItemVisibility()
         {
             if (UpdateOnBodyItemsVisibility == false) return;

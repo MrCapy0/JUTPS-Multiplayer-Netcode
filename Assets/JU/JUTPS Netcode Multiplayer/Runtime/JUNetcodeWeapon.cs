@@ -27,6 +27,25 @@ namespace JU.TPS.Netcode
         private NetworkVariable<float> _netWeaponPositionSpeed = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         private NetworkVariable<float> _netWeaponRotationSpeed = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
+        private NetworkVariable<Vector3> _netCameraPosition = new NetworkVariable<Vector3>(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private NetworkVariable<Vector3> _netShootDirection = new NetworkVariable<Vector3>(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+        protected override void Awake()
+        {
+            base.Awake();
+
+            Item.OnSpawnBullet += bullet =>
+            {
+                if (IsOwner == false)
+                {
+                    return;
+                }
+
+                // Object's damage are controlled by health synchronization.
+                bullet.BulletDamage = 0;
+            };
+        }
+
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
@@ -66,6 +85,8 @@ namespace JU.TPS.Netcode
             UpdateSliderMovementSpeed(_netSliderMovementSpeed.Value, _netSliderMovementSpeed.Value);
             UpdateWeaponPositionSpeed(_netWeaponPositionSpeed.Value, _netWeaponPositionSpeed.Value);
             UpdateWeaponRotationSpeed(_netWeaponRotationSpeed.Value, _netWeaponRotationSpeed.Value);
+            UpdateCameraPosition(_netCameraPosition.Value, _netCameraPosition.Value);
+            UpdateShootDirection(_netShootDirection.Value, _netShootDirection.Value);
         }
 
         public override void OnNetworkDespawn()
@@ -86,6 +107,8 @@ namespace JU.TPS.Netcode
             _netSliderMovementSpeed.OnValueChanged -= UpdateSliderMovementSpeed;
             _netWeaponPositionSpeed.OnValueChanged -= UpdateWeaponPositionSpeed;
             _netWeaponRotationSpeed.OnValueChanged -= UpdateWeaponRotationSpeed;
+            _netCameraPosition.OnValueChanged -= UpdateCameraPosition;
+            _netShootDirection.OnValueChanged -= UpdateShootDirection;
         }
 
         protected override void UpdateIfOwner()
@@ -114,6 +137,20 @@ namespace JU.TPS.Netcode
             _netSliderMovementSpeed.Value = Item.SliderMovementSpeed;
             _netWeaponPositionSpeed.Value = Item.WeaponPositionSpeed;
             _netWeaponRotationSpeed.Value = Item.WeaponRotationSpeed;
+            _netCameraPosition.Value = Item.CameraPosition;
+            _netShootDirection.Value = Item.ShootDirection;
+        }
+
+        protected override void UpdateIfNotOwner()
+        {
+            base.UpdateIfNotOwner();
+
+            if (IsOwner == true)
+            {
+                return;
+            }
+
+            Item.SetWeaponOrientation(_netCameraPosition.Value, _netShootDirection.Value);
         }
 
         private void UpdateTotalBullets(int previous, int current)
@@ -184,6 +221,16 @@ namespace JU.TPS.Netcode
         private void UpdateWeaponRotationSpeed(float previous, float current)
         {
             Item.WeaponRotationSpeed = current;
+        }
+
+        private void UpdateCameraPosition(Vector3 previous, Vector3 current)
+        {
+            Item.SetWeaponOrientation(_netCameraPosition.Value, _netShootDirection.Value);
+        }
+
+        private void UpdateShootDirection(Vector3 previous, Vector3 current)
+        {
+            Item.SetWeaponOrientation(_netCameraPosition.Value, _netShootDirection.Value);
         }
 
         [Rpc(SendTo.NotMe)]

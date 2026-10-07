@@ -18,6 +18,8 @@ TagManager:
   - Vehicle
   - Interactable
   - Water
+  - Patrol
+  - Zombie
   layers:
   - Default
   - TransparentFX

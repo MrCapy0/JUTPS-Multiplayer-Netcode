@@ -137,7 +137,6 @@ public class JUDistanceOptimizer : MonoBehaviour
         public bool autoCollectFromChildren = true;
 
         [Header("Optimization Types (choose one or more)")]
-        [EnumFlags]
         public OptimizationMode modes = OptimizationMode.None;
 
         [Header("Physics Optimization")]
@@ -556,9 +555,3 @@ public class JUDistanceOptimizer : MonoBehaviour
 
     #endregion
 }
-
-/// <summary>
-/// Small helper attribute so enums can behave like flags in the inspector.
-/// (If your Unity version supports [EnumFlags], remove this and use Unity's built-in.)
-/// </summary>
-public class EnumFlagsAttribute : PropertyAttribute { }

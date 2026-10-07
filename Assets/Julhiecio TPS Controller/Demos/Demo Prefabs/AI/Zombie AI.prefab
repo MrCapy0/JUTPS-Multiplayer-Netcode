@@ -3768,7 +3768,7 @@ GameObject:
   - component: {fileID: -8499768571378389597}
   m_Layer: 9
   m_Name: Zombie AI
-  m_TagString: Enemy
+  m_TagString: Zombie
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -4124,6 +4124,10 @@ MonoBehaviour:
   FireModeWalkSpeed: 0.5
   FireModeRunSpeed: 1.3
   FireModeCrouchSpeed: 0.5
+  IKPositionRightHand: {fileID: 0}
+  IKPositionLeftHand: {fileID: 0}
+  RightHandIKPositionTarget: {fileID: 0}
+  LeftHandIKPositionTarget: {fileID: 0}
   HumanoidSpine: {fileID: 0}
   CurrentTimeToDisableFireMode: 0
   Inputs: {fileID: 0}
@@ -4413,6 +4417,7 @@ MonoBehaviour:
   SecondsToDestroy: 5
   DestroyOnStart: 0
   DestroyOnDie: 0
+  DestroyOnDisable: 0
 --- !u!114 &1073173773427798359
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4499,6 +4504,7 @@ MonoBehaviour:
     - Player
     - Distractable
     - Vehicle
+    - Patrol
   DamageDetector:
     LookToDamageDirectionTime: 5
     ForceFirePose: 1

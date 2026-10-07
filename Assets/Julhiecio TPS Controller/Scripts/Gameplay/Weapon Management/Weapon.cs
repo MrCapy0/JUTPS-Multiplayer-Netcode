@@ -11,7 +11,6 @@ namespace JUTPS.WeaponSystem
     [RequireComponent(typeof(AudioSource))]
     public class Weapon : JUHoldableItem
     {
-        private Vector3 CameraPosition;
         private Collider[] ListToIgnoreBulletCollision;
         private bool enableBulletDirectionCorrection = true;
 
@@ -81,10 +80,14 @@ namespace JUTPS.WeaponSystem
 
         [Header("Events")]
         public UnityEvent OnShot;
+        public UnityEvent OnReload;
+
+        public UnityAction<Bullet> OnSpawnBullet;
 
         public JUCharacterController TPSControllerUser { get; private set; }
         public Vector3 ShootDirection { get; private set; }
-
+        public Vector3 CameraPosition { get; private set; }
+        public RaycastHit CameraRaycastHit { get; private set; }
 
         public enum WeaponFireMode { Auto, SemiAuto, BoltAction, Shotgun }
         public enum WeaponAimMode { None, CameraApproach, Scope }
@@ -265,6 +268,8 @@ namespace JUTPS.WeaponSystem
 
                 _bullet.SetOwner(TPSControllerUser.gameObject);
                 _bullet.Ignore(ListToIgnoreBulletCollision);
+
+                OnSpawnBullet?.Invoke(_bullet);
             }
             Destroy(bullet, 10f);
         }
@@ -290,11 +295,11 @@ namespace JUTPS.WeaponSystem
 
             if (FireMode != Weapon.WeaponFireMode.Shotgun)
             {
-                RaycastHit CameraRaycastHit;
                 if (enableBulletDirectionCorrection && CameraPosition != Vector3.zero)
                 {
-                    if (Physics.Raycast(CameraPosition, ShootDirection, out CameraRaycastHit, 500, RaycastingLayers))
+                    if (Physics.Raycast(CameraPosition, ShootDirection, out RaycastHit CameraHit, 500, RaycastingLayers))
                     {
+                        CameraRaycastHit = CameraHit;
                         ShootDirection = (CameraRaycastHit.point - Shoot_Position.position).normalized;
                         if (Vector3.Dot(ShootDirection, Shoot_Position.forward) < 0.7f)
                         {
@@ -354,12 +359,11 @@ namespace JUTPS.WeaponSystem
             }
             else
             {
-
-                RaycastHit CameraRaycastHit;
                 if (enableBulletDirectionCorrection && CameraPosition != Vector3.zero)
                 {
-                    if (Physics.Raycast(CameraPosition, ShootDirection, out CameraRaycastHit, 500, RaycastingLayers))
+                    if (Physics.Raycast(CameraPosition, ShootDirection, out RaycastHit CameraHit, 500, RaycastingLayers))
                     {
+                        CameraRaycastHit = CameraHit;
                         ShootDirection = (CameraRaycastHit.point - Shoot_Position.position).normalized;
                         if (Vector3.Dot(ShootDirection, Shoot_Position.forward) < 0.7f)
                         {
@@ -398,6 +402,7 @@ namespace JUTPS.WeaponSystem
                             _bullet.FinalPoint = CrosshairHit.point;
                             _bullet.FinalPointNormal = CrosshairHit.normal;
                             _bullet.Ignore(ListToIgnoreBulletCollision);
+                            OnSpawnBullet?.Invoke(_bullet);
                         }
 
                         Destroy(bullet, 10f);
@@ -417,6 +422,7 @@ namespace JUTPS.WeaponSystem
                         {
                             _bullet.SetOwner(TPSControllerUser.gameObject);
                             _bullet.Ignore(ListToIgnoreBulletCollision);
+                            OnSpawnBullet?.Invoke(_bullet);
                         }
                         Destroy(bullet, 10f);
                     }
@@ -535,6 +541,7 @@ namespace JUTPS.WeaponSystem
             }
             //Play reloading audio
             mAudioSource.PlayOneShot(ReloadAudio);
+            OnReload.Invoke();
         }
 
 #if UNITY_EDITOR

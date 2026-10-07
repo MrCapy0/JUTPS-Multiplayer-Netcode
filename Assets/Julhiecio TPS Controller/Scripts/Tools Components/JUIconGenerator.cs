@@ -171,7 +171,7 @@ namespace JUTPS.Utilities
             {
                 Gizmos.DrawLine(cam.transform.position, transform.position + CenterOffset);
                 Handles.color = Color.red;
-                Handles.ArrowHandleCap(0, cam.transform.position, cam.transform.rotation, 0.3f, EventType.Repaint);
+                Handles.ArrowHandleCap(0, cam.transform.position - cam.transform.forward * 1, cam.transform.rotation, 0.3f, EventType.Repaint);
             }
         }
 #endif

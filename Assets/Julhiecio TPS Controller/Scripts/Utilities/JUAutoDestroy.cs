@@ -30,6 +30,13 @@ namespace JUTPS.Utilities
         [Tooltip("Auto destroy the object after die after " + nameof(SecondsToDestroy) + " if have " + nameof(IHealth) + " component.")]
         public bool DestroyOnDie;
 
+        /// <summary>
+        /// Auto destroy the object after spawn, see <see cref="SecondsToDestroy"/>.
+        /// </summary>
+        [Tooltip("Auto destroy the object after disable")]
+        public bool DestroyOnDisable;
+
+
         private void Reset()
         {
             DestroyOnStart = true;
@@ -53,7 +60,10 @@ namespace JUTPS.Utilities
                 TimedDestroyObject();
 
         }
-
+        private void OnDisable()
+        {
+            if (DestroyOnDisable) { Destroy(gameObject); }
+        }
         /// <summary>
         /// Destroy gameObject after <see cref="SecondsToDestroy"/>.
         /// </summary>

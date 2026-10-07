@@ -12,8 +12,8 @@ namespace JUTPS.PhysicsScripts
         [SerializeField] private float Radius = 0.5f;
         [SerializeField] private float Height = 1.25f;
 
-        private CapsuleCollider defaultCapsuleCollider;
-        private CapsuleCollider slipCapsule;
+        [HideInInspector] public CapsuleCollider defaultCapsuleCollider;
+        [HideInInspector] public CapsuleCollider slipCapsule;
         void Awake()
         {
             defaultCapsuleCollider = GetComponent<CapsuleCollider>();

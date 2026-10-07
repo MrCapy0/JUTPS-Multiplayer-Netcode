@@ -93,9 +93,9 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1083367630298643349}
   serializedVersion: 4
-  m_Mass: 0.1
-  m_Drag: 3
-  m_AngularDrag: 0.5
+  m_Mass: 0.6
+  m_Drag: 10
+  m_AngularDrag: 0.2
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -227,9 +227,9 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1753690612460266031}
   serializedVersion: 4
-  m_Mass: 0.1
-  m_Drag: 3
-  m_AngularDrag: 0.5
+  m_Mass: 0.6
+  m_Drag: 10
+  m_AngularDrag: 0.2
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -361,9 +361,9 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1968227825278546076}
   serializedVersion: 4
-  m_Mass: 0.1
-  m_Drag: 3
-  m_AngularDrag: 0.5
+  m_Mass: 0.6
+  m_Drag: 10
+  m_AngularDrag: 0.2
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -495,9 +495,9 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2188557726320036449}
   serializedVersion: 4
-  m_Mass: 0.1
-  m_Drag: 3
-  m_AngularDrag: 0.5
+  m_Mass: 0.6
+  m_Drag: 10
+  m_AngularDrag: 0.2
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -629,9 +629,9 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2289491335392965108}
   serializedVersion: 4
-  m_Mass: 0.1
-  m_Drag: 3
-  m_AngularDrag: 0.5
+  m_Mass: 0.6
+  m_Drag: 10
+  m_AngularDrag: 0.2
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -763,9 +763,9 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3078951807526609018}
   serializedVersion: 4
-  m_Mass: 0.1
-  m_Drag: 3
-  m_AngularDrag: 0.5
+  m_Mass: 0.6
+  m_Drag: 10
+  m_AngularDrag: 0.2
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -897,9 +897,9 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3856254177374704539}
   serializedVersion: 4
-  m_Mass: 0.1
-  m_Drag: 3
-  m_AngularDrag: 0.5
+  m_Mass: 0.6
+  m_Drag: 10
+  m_AngularDrag: 0.2
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -949,6 +949,7 @@ GameObject:
   - component: {fileID: 3905571135591169359}
   - component: {fileID: -741210434570292564}
   - component: {fileID: -8978208420333166219}
+  - component: {fileID: -3770692103661433413}
   m_Layer: 0
   m_Name: FracturedShootingTarget
   m_TagString: Untagged
@@ -991,18 +992,18 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: a3a3a8e85dc037d4ba055b5fd525a4dc, type: 3}
+  m_audioClip: {fileID: 8300000, guid: 3156f0f12dd43354fbf3c92dc65d94c4, type: 3}
   m_PlayOnAwake: 1
-  m_Volume: 0.28
-  m_Pitch: 0.68
+  m_Volume: 0.345
+  m_Pitch: 0.73
   Loop: 0
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
   Priority: 128
   DopplerLevel: 1
-  MinDistance: 1
-  MaxDistance: 500
+  MinDistance: 10
+  MaxDistance: 100
   Pan2D: 0
   rolloffMode: 0
   BypassEffects: 0
@@ -1037,7 +1038,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -1091,6 +1092,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   AudioTag: {fileID: 11400000, guid: b7f60ffc055fd01479c79dd9351b4dff, type: 2}
   AudioSource: {fileID: -741210434570292564}
+--- !u!114 &-3770692103661433413
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4429484768951691253}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b28f181aaac6b448995bcd0df949895, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SecondsToDestroy: 2
+  DestroyOnStart: 1
+  DestroyOnDie: 0
+  DestroyOnDisable: 0
 --- !u!1 &5293229237007108222
 GameObject:
   m_ObjectHideFlags: 0
@@ -1184,9 +1201,9 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5293229237007108222}
   serializedVersion: 4
-  m_Mass: 0.1
-  m_Drag: 3
-  m_AngularDrag: 0.5
+  m_Mass: 0.6
+  m_Drag: 10
+  m_AngularDrag: 0.2
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -1318,9 +1335,9 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7482017357443770864}
   serializedVersion: 4
-  m_Mass: 0.1
-  m_Drag: 3
-  m_AngularDrag: 0.5
+  m_Mass: 0.6
+  m_Drag: 10
+  m_AngularDrag: 0.2
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -1452,9 +1469,9 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7641539591500837884}
   serializedVersion: 4
-  m_Mass: 0.1
-  m_Drag: 3
-  m_AngularDrag: 0.5
+  m_Mass: 0.6
+  m_Drag: 10
+  m_AngularDrag: 0.2
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}

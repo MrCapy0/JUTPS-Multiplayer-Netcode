@@ -367,6 +367,9 @@ namespace JUTPS.CustomEditors
             {
                 var ShotEvent = serializedObject.FindProperty(nameof(w.OnShot));
                 EditorGUILayout.PropertyField(ShotEvent);
+
+                var ReloadEvent = serializedObject.FindProperty(nameof(w.OnReload));
+                EditorGUILayout.PropertyField(ReloadEvent);
             }
         }
 

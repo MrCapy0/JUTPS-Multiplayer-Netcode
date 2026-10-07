@@ -233,7 +233,7 @@ namespace JU.CharacterSystem.AI.HearSystem
 
         private void Alert(SoundData sound)
         {
-            _onHear.Invoke(sound.Position, sound.Owner);
+            OnHear?.Invoke(sound.Position, sound.Owner);
         }
 
         /// <summary>

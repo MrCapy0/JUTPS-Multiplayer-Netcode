@@ -1232,7 +1232,7 @@ namespace JUTPS.CharacterBrain
         }
         private void StartSprintAnimation()
         {
-            if (StartMovingAnimationStateName == "" || EnableStartAndStopAnimations == false || Mathf.Abs(DesiredRotationAngle()) > 90) return;
+            if (StartMovingAnimationStateName == "" || EnableStartAndStopAnimations == false || Mathf.Abs(DesiredRotationAngle()) > 145) return;
             if (VelocityMultiplier < WalkSpeed+0.1f && (IsRunning || IsSprinting) && IsGrounded && IsRolling == false && IsRagdolled == false && IsDriving == false && FiringMode == false)
             {
                 anim.CrossFade(StartMovingAnimationStateName, 0.16f, 0);
@@ -1338,7 +1338,7 @@ namespace JUTPS.CharacterBrain
                     //Simulate Inert
                     if (!SetRigidbodyVelocity)
                     {
-                        rb.AddForce(DirectionTransform.forward * LastVelMult * rb.mass * Speed, ForceMode.Impulse);
+                        //rb.AddForce(DirectionTransform.forward * LastVelMult * rb.mass * Speed, ForceMode.Impulse);
                     }
 
                     if (AdjustHeight == false) IsGrounded = false;
@@ -2045,7 +2045,7 @@ namespace JUTPS.CharacterBrain
             //New Jump Delay
             if (CanJump == false && IsJumping == false && IsGrounded == true && IsInvoking(nameof(_enableCanJump)) == false)
             {
-                if (JumpDecreaseSpeed) VelocityMultiplier = VelocityMultiplier / 4;
+                if (JumpDecreaseSpeed) VelocityMultiplier = 0;
                 Invoke(nameof(_enableCanJump), Delay);
             }
         }
@@ -2600,7 +2600,21 @@ namespace JUTPS.CharacterBrain
                     if (RightHand) CurrentItemIDRightHand = Inventory.GetNextUnlockedItemID(CurrentItemIDRightHand); else CurrentItemIDLeftHand = Inventory.GetNextUnlockedItemID(CurrentItemIDLeftHand, transform, false);
                     break;
                 case SwitchDirection.Backward:
-                    if (RightHand) CurrentItemIDRightHand = Inventory.GetPreviousUnlockedItemID(CurrentItemIDRightHand); else CurrentItemIDLeftHand = Inventory.GetPreviousUnlockedItemID(CurrentItemIDLeftHand, transform, false);
+                    if (RightHand)
+                    {
+                        if (CurrentItemIDRightHand > -1)
+                        {
+                            CurrentItemIDRightHand = Inventory.GetPreviousUnlockedItemID(CurrentItemIDRightHand);
+                        }
+                        else
+                        {
+                            CurrentItemIDRightHand = Inventory.GetLastUnlockedItemID(CurrentItemIDRightHand);
+                        }
+                    }
+                    else
+                    {
+                        CurrentItemIDLeftHand = Inventory.GetPreviousUnlockedItemID(CurrentItemIDLeftHand, transform, false);
+                    }
                     break;
             }
 

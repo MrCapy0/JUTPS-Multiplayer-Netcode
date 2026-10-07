@@ -84,6 +84,11 @@ namespace JU.TPS.Netcode
             _netMaxQuantity.Value = Item.MaxItemQuantity;
         }
 
+        protected virtual void UpdateIfNotOwner()
+        {
+
+        }
+
         private void UpdateUnlocked(bool previous, bool current)
         {
             Item.Unlocked = current;

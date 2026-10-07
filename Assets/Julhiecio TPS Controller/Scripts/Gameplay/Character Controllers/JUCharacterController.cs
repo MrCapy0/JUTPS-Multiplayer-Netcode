@@ -51,7 +51,6 @@ namespace JUTPS
             ItemToEquipOnStart = -1;
         }
 
-
         protected override void Start()
         {
             IEnumerator EquipeSelectedItem()
@@ -181,11 +180,6 @@ namespace JUTPS
             //Crouch
             if (isCrouchTriggered)
             {
-                if (IsRunning && AutoRun == true)
-                {
-                    IsRunning = false; ReachedMaxSprintSpeed = false; CanSprint = true; CurrentSprintSpeedIntensity = 0;
-                }
-
                 if (IsCrouched == false || IsProne == true)
                 {
                     _Crouch();
@@ -608,7 +602,7 @@ namespace JUTPS
             }
 
             // >>> Rolling Movement
-            if (IsRolling)
+            if (IsRolling && RootMotion == false)
             {
                 if (IsGrounded == false) IsRolling = false;
                 if (CurvedMovement) { MoveForward(1.5f); } else { MoveDirectional(1.5f); }

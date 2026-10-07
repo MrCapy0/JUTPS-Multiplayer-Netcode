@@ -11,12 +11,13 @@ GameObject:
   - component: {fileID: 3171518942714943514}
   - component: {fileID: 1994149302103791551}
   - component: {fileID: 4343813582827135861}
-  - component: {fileID: 3137257219415818231}
   - component: {fileID: 1573896421}
   - component: {fileID: 1601540952}
   - component: {fileID: 1601540953}
   - component: {fileID: 2446857461489881437}
   - component: {fileID: 1991718487013492502}
+  - component: {fileID: 343179963473650338}
+  - component: {fileID: 338664082914934957}
   m_Layer: 0
   m_Name: ShootingTarget
   m_TagString: Skin
@@ -89,27 +90,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &3137257219415818231
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2830704781683720864}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b17726132bf84fd4eaa489e4a8d21675, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Strength: 50
-  FracturedObject: {fileID: 4429484768951691253, guid: 83f55593e353d20488e7e1395dd7c413,
-    type: 3}
-  PositionOffset: {x: 0, y: 0, z: 0}
-  TimeToDestroy: 6
-  DoSlowmotionWhenDestroy: 0
-  DoSlowmotionWhenPlayerIsJumping: 0
-  TimeToFracture: 0
-  DestructionFX: {fileID: 0}
 --- !u!54 &1573896421
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -191,7 +171,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88955d23b45630b4e876a1f174e3d74b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Speed: 0.5
+  Speed: 1
+  EnabledImpactMovementEffect: 1
+  ImpactCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: -0.0025741113
+      value: 0.27208138
+      inSlope: 94.20967
+      outSlope: 94.20967
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.017449649
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 81.98097
+      outSlope: 81.98097
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.02210512
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  Axis: {x: 1, y: 0, z: 0}
+  ImpactIntensity: 3
+  RotationSpeed: 20
+  AnimationSpeed: 3
+  currentTime: 0
 --- !u!114 &1991718487013492502
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -204,10 +214,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa2549d042f8b6d41bb6289069865f19, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _spamHitTime: 0.1
+  _spamHitTime: 0
   _protection: 0
-  _health: 100
-  _maxHealth: 100
+  _health: 60
+  _maxHealth: 60
   _isInvencible: 0
   _healthRegeneration:
     Delay: 0
@@ -220,7 +230,31 @@ MonoBehaviour:
   _spawnOnDie: {fileID: 0}
   _onDeath:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 343179963473650338}
+        m_TargetAssemblyTypeName: JUTPS.Utilities.JUAutoDestroy, Assembly-CSharp
+        m_MethodName: DestroyObject
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 338664082914934957}
+        m_TargetAssemblyTypeName: JUTPS.Utilities.JUAutoInstantiate, Assembly-CSharp
+        m_MethodName: InstantiatePrefab
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   _onDamage:
     m_PersistentCalls:
       m_Calls: []
@@ -228,5 +262,50 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   _onResetHealth:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &343179963473650338
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2830704781683720864}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b28f181aaac6b448995bcd0df949895, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SecondsToDestroy: 0.1
+  DestroyOnStart: 0
+  DestroyOnDie: 0
+  DestroyOnDisable: 0
+--- !u!114 &338664082914934957
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2830704781683720864}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0096f6e233501104390d9b289f66a017, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Prefab: {fileID: 4429484768951691253, guid: 83f55593e353d20488e7e1395dd7c413, type: 3}
+  StartInstantiateOnAwake: 0
+  TimeToSpawn: 0
+  Repeat: 0
+  RepeatingTime: 1
+  InstanceLifeTime: -1
+  SwitchToRandomInstantiate: 0
+  PrefabsToInstantiate: []
+  SpawnArea: {x: 0, y: 0, z: 0}
+  PositionOffset: {x: 0, y: 0, z: 0}
+  RandomRotation: 1
+  Quantity: 1
+  InstancesLimit: 32
+  EmptyInstantiatePorcentage: 0
+  OnInstantiate:
     m_PersistentCalls:
       m_Calls: []
