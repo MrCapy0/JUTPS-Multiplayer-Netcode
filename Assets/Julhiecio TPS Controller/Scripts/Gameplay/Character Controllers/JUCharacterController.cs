@@ -137,31 +137,28 @@ namespace JUTPS
             }
 
             // Get Input Values
-            bool ShotInput = EnableShot ? Inputs.IsShotPressed : false;
-            bool shotInputDown = EnableShot ? Inputs.IsShotTriggered : false;
-            bool meleeAttackInput = EnableMeleeWeaponsAttacks ? Inputs.IsMeleeWeaponAttackTriggered : false;
-            bool punchInputDown = EnablePunchAttacks ? Inputs.IsPunchTriggered : false;
+            bool ShotInput = Inputs.IsShotPressed;
+            bool shotInputDown = Inputs.IsShotTriggered;
+            bool meleeAttackInput = Inputs.IsMeleeWeaponAttackTriggered;
+            bool punchInputDown = Inputs.IsPunchTriggered;
             bool reloadTriggered = Inputs.IsReloadTriggered;
-            bool aimInput = EnableAim ? Inputs.IsAimPressed : false;
-            bool aimInputDown = EnableAim ? Inputs.IsAimTriggered : false;
-            bool isProneTriggered = EnableProne ? Inputs.IsProneTriggered : false;
+            bool aimInput = Inputs.IsAimPressed;
+            bool aimInputDown = Inputs.IsAimTriggered;
+            bool isProneTriggered = Inputs.IsProneTriggered;
             bool isCrouchTriggered = Inputs.IsCrouchTriggered;
             bool isRunPressed = Inputs.IsRunPressed;
             bool isRunPerformed = Inputs.IsRunPerformed;
-            bool isRollTriggered = Inputs.IsRollTriggered && EnableRoll;
+            bool isRollTriggered = Inputs.IsRollTriggered;
             bool isNextItemTriggered = Inputs.IsEquipeNextItemTriggered;
             bool isPreviousItemTriggered = Inputs.IsEquipePreviousItemTriggered;
+            bool isJumpTriggered = Inputs.IsJumpTriggered;
             Vector2 moveAxis = Inputs.MoveAxis;
 
             // Force Blocking Movement Axis Input
             if (BlockHorizontalInput) moveAxis.x = 0;
             if (BlockVerticalInput) moveAxis.y = 0;
 
-            HorizontalX = moveAxis.x;
-            VerticalY = moveAxis.y;
-
             // Firing Mode timer
-            FireModeTimer(ShotInput, aimInput);
 
             // Item switching
             if (isNextItemTriggered) SwitchToNextItem();
@@ -176,6 +173,32 @@ namespace JUTPS
             if (Inputs.IsEquipSlot8Triggered) SwitchToItemInSequentialSlot(InventorySystem.JUInventory.SequentialSlotsEnum.eighth);
             if (Inputs.IsEquipSlot9Triggered) SwitchToItemInSequentialSlot(InventorySystem.JUInventory.SequentialSlotsEnum.ninth);
             if (Inputs.IsEquipSlot10Triggered) SwitchToItemInSequentialSlot(InventorySystem.JUInventory.SequentialSlotsEnum.third);
+
+            if (EnableProne == false)
+            {
+                isProneTriggered = false;
+            }
+
+            //Block firemod if cursor isnot visible
+            if (Cursor.visible == true && JUGameManager.IsMobileControls == false && BlockFireModeOnCursorVisible)
+            {
+                return;
+            }
+
+            ControllerInputs(
+                moveAxis: moveAxis,
+                ShotInput: ShotInput,
+                shotInputDown: shotInputDown,
+                meleeAttackInput: meleeAttackInput,
+                punchInputDown: punchInputDown,
+                reloadTriggered: reloadTriggered,
+                aimInput: aimInput,
+                aimInputDown: aimInputDown,
+                isRunPressed: isRunPressed,
+                isRunPerformed: isRunPerformed,
+                isRollTriggered: isRollTriggered,
+                isJumpTriggered: isJumpTriggered
+            );
 
             //Crouch
             if (isCrouchTriggered)
@@ -204,6 +227,87 @@ namespace JUTPS
                 }
             }
 
+            //Mobile Run Button Auto-Run
+            if (JUGameManager.IsMobileControls && BlockVerticalInput == false)
+            {
+                if (isRunPressed && HorizontalX == 0 && VerticalY == 0)
+                {
+                    if (SprintOnRunButton)
+                    {
+                        IsSprinting = true;
+                        if (UnlimitedSprintDuration) ReachedMaxSprintSpeed = false;
+                    }
+
+                    IsRunning = true;
+                    IsCrouched = false;
+                    IsMoving = true;
+                    VerticalY = Mathf.Lerp(VerticalY, 1f, 8 * Time.deltaTime);
+
+                }
+            }
+
+            //Auto Run
+            if (WalkOnRunButton)
+            {
+                if (AutoRun && isRunPressed == false && IsCrouched == false)
+                {
+                    if (Mathf.Abs(HorizontalX) > 0.5f || Mathf.Abs(VerticalY) > 0.5f)
+                    {
+                        IsRunning = true;
+                    }
+                }
+            }
+            else
+            {
+                if (AutoRun && IsCrouched == false)
+                {
+                    if (Mathf.Abs(HorizontalX) > 0.5f || Mathf.Abs(VerticalY) > 0.5f)
+                    {
+                        IsRunning = true;
+                    }
+                }
+            }
+        }
+
+        public virtual void ControllerInputs(Vector2 moveAxis, bool ShotInput, bool shotInputDown, bool meleeAttackInput, bool punchInputDown, bool reloadTriggered, bool aimInput, bool aimInputDown, bool isRunPressed, bool isRunPerformed, bool isRollTriggered, bool isJumpTriggered)
+        {
+            if (EnableShot == false)
+            {
+                ShotInput = false;
+                shotInputDown = false;
+            }
+
+            if (EnableMeleeWeaponsAttacks == false)
+            {
+                meleeAttackInput = false;
+            }
+
+            if (EnablePunchAttacks == false)
+            {
+                punchInputDown = false;
+            }
+
+            if (EnableAim == false)
+            {
+                aimInput = false;
+                aimInputDown = false;
+            }
+
+            if (EnableRoll == false)
+            {
+                isRollTriggered = false;
+            }
+
+            // Force Blocking Movement Axis Input
+            if (BlockHorizontalInput) moveAxis.x = 0;
+            if (BlockVerticalInput) moveAxis.y = 0;
+
+            HorizontalX = moveAxis.x;
+            VerticalY = moveAxis.y;
+
+            // Firing Mode timer
+            FireModeTimer(ShotInput, aimInput);
+
             // Prone Get Up
             if (MaxWalkableAngle > 0 && (GroundAngle > MaxWalkableAngle / 1.5f && IsProne))
             {
@@ -217,7 +321,7 @@ namespace JUTPS
             }
 
             //Jump
-            if (Inputs.IsJumpTriggered && IsJumping == false)
+            if (isJumpTriggered && IsJumping == false)
             {
                 _Jump();
             }
@@ -276,49 +380,6 @@ namespace JUTPS
 
             //Infinite Sprinting
             if (SprintingSkill && IsSprinting == true && UnlimitedSprintDuration && FiringMode == false) ReachedMaxSprintSpeed = false;
-
-
-
-            //Auto Run
-            if (WalkOnRunButton)
-            {
-                if (AutoRun && isRunPressed == false && IsCrouched == false)
-                {
-                    if (Mathf.Abs(HorizontalX) > 0.5f || Mathf.Abs(VerticalY) > 0.5f)
-                    {
-                        IsRunning = true;
-                    }
-                }
-            }
-            else
-            {
-                if (AutoRun && IsCrouched == false)
-                {
-                    if (Mathf.Abs(HorizontalX) > 0.5f || Mathf.Abs(VerticalY) > 0.5f)
-                    {
-                        IsRunning = true;
-                    }
-                }
-            }
-
-            //Mobile Run Button Auto-Run
-            if (JUGameManager.IsMobileControls && BlockVerticalInput == false)
-            {
-                if (isRunPressed && HorizontalX == 0 && VerticalY == 0)
-                {
-                    if (SprintOnRunButton)
-                    {
-                        IsSprinting = true;
-                        if (UnlimitedSprintDuration) ReachedMaxSprintSpeed = false;
-                    }
-
-                    IsRunning = true;
-                    IsCrouched = false;
-                    IsMoving = true;
-                    VerticalY = Mathf.Lerp(VerticalY, 1f, 8 * Time.deltaTime);
-
-                }
-            }
 
             //Disable Aiming if isnt in Fire Mode
             if (!FiringMode) IsAiming = false;

@@ -272,9 +272,9 @@ namespace JUTPS.CharacterBrain
         public GameObject PivotItemRotation;
         public WeaponAimRotationCenter WeaponHoldingPositions;
 
-        [HideInInspector] public JUHoldableItem HoldableItemInUseRightHand, HoldableItemInUseLeftHand;
+        public JUHoldableItem HoldableItemInUseRightHand, HoldableItemInUseLeftHand;
 
-        protected int CurrentItemIDRightHand = -1, CurrentItemIDLeftHand = -1; // [-1] = Hand
+        public int CurrentItemIDRightHand = -1, CurrentItemIDLeftHand = -1; // [-1] = Hand
         [Header("Fire Mode Settings")]
         public PressAimMode AimMode;
         public float FireModeWalkSpeed = 0.5f, FireModeRunSpeed = 1.3f, FireModeCrouchSpeed = 0.5f;
@@ -895,7 +895,7 @@ namespace JUTPS.CharacterBrain
 
                 // >>> Apply Root Motion Artificial Smooth Rotation
                 // This will prevent "no rotation" bugs
-                if((RootMotionRotation == true && RootMotion == true) && (Mathf.Abs(HorizontalX) > 0.1f || Mathf.Abs(VerticalY) > 0.1f) && Mathf.Abs(DesiredRotationAngle()) < 30)
+                if ((RootMotionRotation == true && RootMotion == true) && (Mathf.Abs(HorizontalX) > 0.1f || Mathf.Abs(VerticalY) > 0.1f) && Mathf.Abs(DesiredRotationAngle()) < 30)
                 {
                     transform.rotation = Quaternion.Lerp(transform.rotation, DirectionTransform.rotation, 1 * Time.deltaTime);
                 }
@@ -1177,9 +1177,9 @@ namespace JUTPS.CharacterBrain
         {
             if (IsMoving && BodyInclination && CanMove && !WallAHead && IsRolling == false)
             {
-                if(isRMTurning == true)
+                if (isRMTurning == true)
                 {
-                    RootMotion = true; 
+                    RootMotion = true;
                     RootMotionRotation = true;
                     bodyRotation = Mathf.LerpAngle(bodyRotation, Mathf.Clamp(RM_DesiredAngle / 165, -1, 1), 6f * Time.deltaTime);
 
@@ -1216,7 +1216,7 @@ namespace JUTPS.CharacterBrain
                         //bodyRotation = Mathf.LerpAngle(bodyRotation, 0, 4f * Time.deltaTime);
                         transform.rotation = Quaternion.Slerp(transform.rotation, DirectionTransform.rotation, RotationSpeed * Time.deltaTime);
                     }
-                    
+
                 }
                 else
                 {
@@ -1233,7 +1233,7 @@ namespace JUTPS.CharacterBrain
         private void StartSprintAnimation()
         {
             if (StartMovingAnimationStateName == "" || EnableStartAndStopAnimations == false || Mathf.Abs(DesiredRotationAngle()) > 145) return;
-            if (VelocityMultiplier < WalkSpeed+0.1f && (IsRunning || IsSprinting) && IsGrounded && IsRolling == false && IsRagdolled == false && IsDriving == false && FiringMode == false)
+            if (VelocityMultiplier < WalkSpeed + 0.1f && (IsRunning || IsSprinting) && IsGrounded && IsRolling == false && IsRagdolled == false && IsDriving == false && FiringMode == false)
             {
                 anim.CrossFade(StartMovingAnimationStateName, 0.16f, 0);
             }
@@ -1252,7 +1252,7 @@ namespace JUTPS.CharacterBrain
         }
         private void HandleStopMovingAnimation()
         {
-           if(IsMoving == false) anim.CrossFade(StopMovingAnimationStateName, 0.25f, 0);
+            if (IsMoving == false) anim.CrossFade(StopMovingAnimationStateName, 0.25f, 0);
         }
 
         [HideInInspector] private Vector3 oldEulerAngles;
@@ -1564,8 +1564,8 @@ namespace JUTPS.CharacterBrain
                 }
                 if (RootMotionRotation)
                 {
-                    Quaternion deltaRot = anim.deltaRotation; 
-                    deltaRot.x = 0; 
+                    Quaternion deltaRot = anim.deltaRotation;
+                    deltaRot.x = 0;
                     deltaRot.z = 0;
                     transform.rotation *= deltaRot;
 
@@ -1579,10 +1579,21 @@ namespace JUTPS.CharacterBrain
         #region Character Actions Functions
         protected virtual void UseRightHandItem(bool ShotInput, bool ShotDownInput)
         {
-            if (HoldableItemInUseRightHand == null) return;
-            if ((HoldableItemInUseRightHand is Weapon) == true || (HoldableItemInUseRightHand is MeleeWeapon) == true) { return; }
+            if (HoldableItemInUseRightHand == null)
+            {
+                Debug.Log("cancel 1");
+                return;
+            }
+            if ((HoldableItemInUseRightHand is Weapon) == true || (HoldableItemInUseRightHand is MeleeWeapon) == true)
+            {
+                return;
+            }
             //Debug.Log("Is Righ Hand Holdable Item selected");
-            if (!IsItemEquiped || IsRolling) return;
+            if (!IsItemEquiped || IsRolling)
+            {
+                Debug.Log("cancel 3");
+                return;
+            }
 
             //Disable Aiming
             IsAiming = false;
@@ -1707,15 +1718,29 @@ namespace JUTPS.CharacterBrain
 
         public virtual void UseMeleeWeapons(bool AttackInputDown)
         {
-            if (HoldableItemInUseRightHand == null && HoldableItemInUseLeftHand == null) { IsMeleeAttacking = false; return; }
+            if (HoldableItemInUseRightHand == null && HoldableItemInUseLeftHand == null)
+            {
+                IsMeleeAttacking = false;
+                return;
+            }
 
-            if (HoldableItemInUseRightHand != null) { if ((HoldableItemInUseRightHand is MeleeWeapon) == false) return; }
-            if (HoldableItemInUseLeftHand != null) { if ((HoldableItemInUseLeftHand is MeleeWeapon) == false) return; }
-
+            if (HoldableItemInUseRightHand != null)
+            {
+                if ((HoldableItemInUseRightHand is MeleeWeapon) == false)
+                {
+                    return;
+                }
+            }
+            if (HoldableItemInUseLeftHand != null)
+            {
+                if ((HoldableItemInUseLeftHand is MeleeWeapon) == false)
+                {
+                    return;
+                }
+            }
 
             IsMeleeAttacking = (LeftHandMeleeWeapon != null) ? LeftHandMeleeWeapon.IsUsingItem : false;
             IsMeleeAttacking = (RightHandMeleeWeapon != null) ? RightHandMeleeWeapon.IsUsingItem : false;
-
 
             if (AttackInputDown)
             {
@@ -2053,7 +2078,7 @@ namespace JUTPS.CharacterBrain
         {
             if (IsGrounded == false || IsDriving == true) return;
 
-            if (IsProne) IsProne = false;
+            IsProne = false;
             IsCrouched = true;
         }
         public virtual void _Prone()
@@ -2064,16 +2089,8 @@ namespace JUTPS.CharacterBrain
         }
         public virtual void _GetUp()
         {
-            if (IsProne)
-            {
-                IsCrouched = true;
-                IsProne = false;
-            }
-            else
-            {
-                IsCrouched = false;
-                IsProne = false;
-            }
+            IsCrouched = IsProne;
+            IsProne = false;
         }
         public virtual void _Roll()
         {
@@ -2431,6 +2448,8 @@ namespace JUTPS.CharacterBrain
                         //Debug.Log("1 w");
                         HoldableItemInUseLeftHand.UseItem();
                         HoldableItemInUseRightHand.UseItem();
+
+                        Debug.Log("4");
                     }
                 }
             }
@@ -2504,11 +2523,15 @@ namespace JUTPS.CharacterBrain
             if (Inventory == null) return;
 
             if (id >= Inventory.HoldableItensRightHand.Length && RightHand == true)
+            {
                 return;
+            }
 
             // The item was already equiped.
             if (HoldableItemInUseRightHand && HoldableItemInUseRightHand.ItemSwitchID == id && RightHand == true)
+            {
                 return;
+            }
 
             //Disable Aiming State and Shot State
             IsAiming = false; UsedItem = false;
@@ -2529,6 +2552,7 @@ namespace JUTPS.CharacterBrain
             CurrentItemIDLeftHand = Inventory.CurrentLeftHandItemID;
 
             //Get Holdable Itens
+
             HoldableItemInUseLeftHand = Inventory.HoldableItemInUseInLeftHand;
             HoldableItemInUseRightHand = Inventory.HoldableItemInUseInRightHand;
 

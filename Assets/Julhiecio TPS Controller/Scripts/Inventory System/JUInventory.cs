@@ -59,11 +59,11 @@ namespace JUTPS.InventorySystem
         [HideInInspector] public Weapon[] WeaponsRightHand;
         [HideInInspector] public Weapon[] WeaponsLeftHand;
 
-        [HideInInspector] public JUHoldableItem HoldableItemInUseInRightHand, HoldableItemInUseInLeftHand;
-        [HideInInspector] public Weapon WeaponInUseInRightHand, WeaponInUseInLeftHand;
-        [HideInInspector] public MeleeWeapon MeleeWeaponInUseInRightHand, MeleeWeaponInUseInLeftHand;
+        public JUHoldableItem HoldableItemInUseInRightHand, HoldableItemInUseInLeftHand;
+        public Weapon WeaponInUseInRightHand, WeaponInUseInLeftHand;
+        public MeleeWeapon MeleeWeaponInUseInRightHand, MeleeWeaponInUseInLeftHand;
 
-        [HideInInspector] public int CurrentRightHandItemID = -1, CurrentLeftHandItemID = -1; // [-1] = Hand
+        public int CurrentRightHandItemID = -1, CurrentLeftHandItemID = -1; // [-1] = Hand
 
         [JUHeader("PickUp Outline Effect System")]
         public bool EnableOutlineEffect = true;
@@ -79,7 +79,7 @@ namespace JUTPS.InventorySystem
         /// </summary>
         public bool IsPickingItem { get; private set; }
 
-        public enum PickUpSystemMode { LocalSphereChecker, CameraRaycasting, CameraBoxCasting} 
+        public enum PickUpSystemMode { LocalSphereChecker, CameraRaycasting, CameraBoxCasting }
         /// <summary>
         /// Return true if the <see cref="JUCharacter"/> is using a <see cref="JUHoldableItem"/> on any hand (left or right).
         /// </summary>
@@ -267,12 +267,12 @@ namespace JUTPS.InventorySystem
                     {
                         foreach (Collider item in ItemsAround)
                         {
-                            if(item.TryGetComponent(out JUItem currentItemToPickup))
+                            if (item.TryGetComponent(out JUItem currentItemToPickup))
                             {
                                 ItemToPickUp = currentItemToPickup;
                             }
                         }
-                        
+
                     }
                     //ItemToPickUp = ItemsAround[0].GetComponent<JUItem>() == null ? null : ItemsAround[0].GetComponent<JUItem>();
 
@@ -408,7 +408,7 @@ namespace JUTPS.InventorySystem
 
             if (ItemToPickUp != null && currentItemToOutline == null)
             {
-                if(ItemToPickUp.TryGetComponent(out FX.JUOutlineEffect outline))
+                if (ItemToPickUp.TryGetComponent(out FX.JUOutlineEffect outline))
                 {
                     currentItemToOutline = outline;
                     outline.EnableOutline();
@@ -417,7 +417,7 @@ namespace JUTPS.InventorySystem
 
             if (currentItemToOutline == null) return;
 
-            if((ItemToPickUp == null && currentItemToOutline != null) || (currentItemToOutline.gameObject != ItemToPickUp.gameObject))
+            if ((ItemToPickUp == null && currentItemToOutline != null) || (currentItemToOutline.gameObject != ItemToPickUp.gameObject))
             {
                 currentItemToOutline.DisableOutline();
                 currentItemToOutline = null;
@@ -691,6 +691,7 @@ namespace JUTPS.InventorySystem
                     CurrentRightHandItemID = -1;
                     WeaponInUseInRightHand = null;
                     HoldableItemInUseInRightHand = null;
+                    Debug.Log("wrong");
                 }
             }
             else
@@ -784,7 +785,7 @@ namespace JUTPS.InventorySystem
                 }
             }
 
-            
+
             UpdateItemInUse();
             RefreshItemsVisibility();
             RefreshInBodyItemVisibility();

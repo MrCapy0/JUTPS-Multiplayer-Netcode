@@ -50,9 +50,8 @@ namespace JU.TPS.Netcode
         {
             base.OnNetworkSpawn();
 
-            if (IsOwner)
+            if (IsOwner == true)
             {
-                Item.OnShot.AddListener(ShotRpc);
                 return;
             }
 
@@ -231,12 +230,6 @@ namespace JU.TPS.Netcode
         private void UpdateShootDirection(Vector3 previous, Vector3 current)
         {
             Item.SetWeaponOrientation(_netCameraPosition.Value, _netShootDirection.Value);
-        }
-
-        [Rpc(SendTo.NotMe)]
-        private void ShotRpc()
-        {
-            Item.Shot();
         }
     }
 }

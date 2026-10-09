@@ -1,5 +1,6 @@
 using JUTPS;
 using JUTPS.CameraSystems;
+using JUTPS.PhysicsScripts;
 using Unity.Netcode;
 using Unity.Netcode.Components;
 using UnityEngine;
@@ -15,28 +16,45 @@ namespace JU.TPS.Netcode
     [RequireComponent(typeof(NetworkRigidbody))]
     public class JUNetcodeCharacterController : NetworkBehaviour
     {
+        [System.Flags]
+        private enum Flags
+        {
+            // States.
+            IsRunning = 1 << 0,
+            IsSprinting = 1 << 1,
+            IsCrouching = 1 << 2,
+            IsProne = 1 << 3,
+
+            // Inputs.
+            ShotInputPressed = 1 << 10,
+            ReloadTriggered = 1 << 11,
+            AimInputPressed = 1 << 12,
+            AimInputTriggered = 1 << 13,
+        }
+
+        [System.Flags]
+        private enum TriggeredInputFlags
+        {
+            MeleeAttackTriggered = 1 << 0,
+            PunchAttackTriggered = 1 << 1,
+            RollTriggered = 1 << 2,
+            ReloadTriggered = 1 << 3
+        }
+
+        private float _enableWeaponSwitchingTime;
         private JUCharacterController _tps;
 
         private NetworkTransform _networkTransform;
         private NetworkRigidbody _networkRigidbody;
 
-        private NetworkVariable<int> _rightItemId = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private NetworkVariable<Vector2> _netMoveAxis = new NetworkVariable<Vector2>(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private NetworkVariable<Vector3> _netLookPosition = new NetworkVariable<Vector3>(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private NetworkVariable<Flags> _netStateFlags = new NetworkVariable<Flags>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private NetworkVariable<int> _netRightHandItem = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private NetworkVariable<AdvancedRagdollController.RagdollState> _netRagdollState = new NetworkVariable<AdvancedRagdollController.RagdollState>(AdvancedRagdollController.RagdollState.Animated, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
-        private NetworkVariable<Vector2> _netMoveDirection = new(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<bool> _netRunning = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<bool> _netSprinting = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<bool> _netCrouch = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<bool> _netProne = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<bool> _netRolling = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<bool> _netAiming = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<bool> _netFireMode = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<bool> _netFireModeIk = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<bool> _netRagdolled = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<int> _netMeleeAttackRequests = new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<Vector3> _netLookAtPosition = new(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
-        private bool _meleeAttackRequestConsumed;
-        private float _meleeAttackRequestResetTime;
+        private Flags _clientLastFlags;
+        private TriggeredInputFlags _clientLastTriggeredInputFlags;
 
         public GameObject UserInterfacePrefab;
         public TPSCameraController CameraControllerPrefab;
@@ -125,6 +143,8 @@ namespace JU.TPS.Netcode
         {
             base.OnNetworkSpawn();
 
+            _enableWeaponSwitchingTime = 0;
+
             if (IsOwner)
             {
                 if (CharacterController.IsPlayer)
@@ -139,6 +159,7 @@ namespace JU.TPS.Netcode
                 CharacterController.tag = "Untagged";
                 CharacterController.MyPivotCamera = null;
                 CharacterController.UseDefaultControllerInput = false;
+                CharacterController.Inputs = null;
 
                 CharacterController.IKPositionLeftHand.SetParent(CharacterController.transform);
                 CharacterController.IKPositionRightHand.SetParent(CharacterController.transform);
@@ -172,45 +193,55 @@ namespace JU.TPS.Netcode
                 return;
             }
 
-            // Updateitem in use.
-            if (!CharacterController.HoldableItemInUseRightHand)
+            bool shotInputPressed = CharacterController.Inputs.IsShotPressed;
+            bool meleeAttackTriggered = CharacterController.Inputs.IsMeleeWeaponAttackTriggered;
+            bool punchInputTriggered = CharacterController.Inputs.IsPunchTriggered;
+            bool reloadTriggered = CharacterController.Inputs.IsReloadTriggered;
+            bool aimInputPressed = CharacterController.Inputs.IsAimPressed;
+            bool isRollTriggered = CharacterController.Inputs.IsRollTriggered;
+
+            Vector2 moveDirection = CharacterController.Inputs.MoveAxis;
+            if (CharacterController.MyPivotCamera != null)
             {
-                _rightItemId.Value = -1;
-            }
-            else
-            {
-                _rightItemId.Value = CharacterController.HoldableItemInUseRightHand.ItemSwitchID;
+                Vector3 cameraForward = CharacterController.MyPivotCamera.mCamera.transform.forward;
+                Vector3 cameraRight = CharacterController.MyPivotCamera.mCamera.transform.right;
+
+                cameraForward = Vector3.ProjectOnPlane(cameraForward, Vector3.up);
+                cameraRight = Vector3.ProjectOnPlane(cameraRight, Vector3.up);
+                cameraForward /= cameraForward.magnitude;
+                cameraRight /= cameraRight.magnitude;
+
+                Vector3 moveDirection3D = moveDirection.y * cameraForward + moveDirection.x * cameraRight;
+                moveDirection.x = moveDirection3D.x;
+                moveDirection.y = moveDirection3D.z;
             }
 
-            _netRolling.Value = CharacterController.IsRolling;
-            _netCrouch.Value = CharacterController.IsCrouched;
-            _netProne.Value = CharacterController.IsProne;
-            _netSprinting.Value = CharacterController.IsSprinting;
-            _netRagdolled.Value = CharacterController.IsRagdolled;
-            _netRunning.Value = CharacterController.IsRunning;
-            _netAiming.Value = CharacterController.IsAiming;
-            _netFireMode.Value = CharacterController.FiringMode;
-            _netFireModeIk.Value = CharacterController.FiringModeIK;
-            _netMoveDirection.Value = new Vector3(CharacterController.HorizontalX, CharacterController.VerticalY);
+            _netRightHandItem.Value = CharacterController.Inventory.CurrentRightHandItemID;
 
-            bool meleeAttackInput = CharacterController.EnableMeleeWeaponsAttacks ? CharacterController.Inputs.IsMeleeWeaponAttackTriggered : false;
-            bool punchInputDown = CharacterController.EnablePunchAttacks ? CharacterController.Inputs.IsPunchTriggered : false;
+            _netMoveAxis.Value = moveDirection;
 
-            if (meleeAttackInput == true || punchInputDown == true)
-            {
-                if (CharacterController.RightHandWeapon == null)
-                {
-                    _netMeleeAttackRequests.Value += 1;
-                    _meleeAttackRequestResetTime = Time.time + 2f / NetworkManager.NetworkConfig.TickRate;
-                }
-            }
-            else if (_netMeleeAttackRequests.Value > 0 && Time.time >= _meleeAttackRequestResetTime)
-            {
-                _netMeleeAttackRequests.Value -= 1;
-            }
+            Flags flags = 0;
+
+            // State flags.
+            if (CharacterController.IsRunning) flags |= Flags.IsRunning;
+            if (CharacterController.IsSprinting) flags |= Flags.IsSprinting;
+            if (CharacterController.IsCrouched) flags |= Flags.IsCrouching;
+            if (CharacterController.IsProne) flags |= Flags.IsProne;
+
+            // Inputs flags.
+            if (shotInputPressed) flags |= Flags.ShotInputPressed;
+            if (aimInputPressed) flags |= Flags.AimInputPressed;
+
+            // Trigger input RPCs.
+            if (meleeAttackTriggered) TriggerMeleeInputRpc();
+            if (punchInputTriggered) TriggerPunchInputRpc();
+            if (isRollTriggered) TriggerRollInputRpc();
+            if (reloadTriggered) TriggerReloadInputRpc();
+
+            _netStateFlags.Value = flags;
 
             Vector3 lookAtPosition = CharacterController.GetLookPosition();
-            if (CharacterController.RightHandWeapon != null && CharacterController.FiringModeIK && CharacterController.RightHandWeapon.CameraRaycastHit.point != Vector3.zero)
+            if (_enableWeaponSwitchingTime > 0.3f && CharacterController.RightHandWeapon != null && CharacterController.FiringModeIK && CharacterController.RightHandWeapon.CameraRaycastHit.point != Vector3.zero)
             {
                 RaycastHit hit = CharacterController.RightHandWeapon.CameraRaycastHit;
                 Vector3 hitDirection = (hit.point - CharacterController.RightHandWeapon.Shoot_Position.position).normalized;
@@ -219,27 +250,62 @@ namespace JU.TPS.Netcode
                     lookAtPosition = hit.point;
                 }
             }
-            _netLookAtPosition.Value = lookAtPosition;
+
+            if (_enableWeaponSwitchingTime <= 0.3f)
+            {
+                _enableWeaponSwitchingTime += Time.deltaTime;
+            }
+
+            _netLookPosition.Value = lookAtPosition;
+
+            if (CharacterController.Ragdoller != null)
+            {
+                _netRagdollState.Value = CharacterController.Ragdoller.State;
+            }
         }
 
         private void UpdateIfNonOwner()
         {
-            if (IsOwner)
+            if (IsOwner && IsSpawned)
             {
                 return;
             }
 
-            CharacterController.LeftHandIKPositionTarget.localPosition = CharacterController.IKPositionLeftHand.localPosition;
-            CharacterController.LeftHandIKPositionTarget.localEulerAngles = CharacterController.IKPositionLeftHand.localEulerAngles;
+            Flags flags = _netStateFlags.Value;
 
-            CharacterController.RightHandIKPositionTarget.localPosition = CharacterController.IKPositionRightHand.localPosition;
-            CharacterController.RightHandIKPositionTarget.localEulerAngles = CharacterController.IKPositionRightHand.localEulerAngles;
+            bool shotInputPressed = flags.HasFlag(Flags.ShotInputPressed);
+            bool aimInputPressed = flags.HasFlag(Flags.AimInputPressed);
+            bool shotInputTriggered = flags.HasFlag(Flags.ShotInputPressed) && !_clientLastFlags.HasFlag(Flags.ShotInputPressed);
+            bool meleeAttackTriggered = _clientLastTriggeredInputFlags.HasFlag(TriggeredInputFlags.MeleeAttackTriggered);
+            bool punchAttackTriggered = _clientLastTriggeredInputFlags.HasFlag(TriggeredInputFlags.PunchAttackTriggered);
+            bool rollTriggered = _clientLastTriggeredInputFlags.HasFlag(TriggeredInputFlags.RollTriggered);
+            bool reloadTriggered = _clientLastTriggeredInputFlags.HasFlag(TriggeredInputFlags.ReloadTriggered);
 
-            CharacterController.LookAtPosition = _netLookAtPosition.Value;
+            _clientLastFlags = flags;
 
-            if (CharacterController.IsCrouched != _netCrouch.Value)
+            // Better to sync, i don't need to worry about triggered/holding button pressed.
+            CharacterController.AimMode = JUTPS.CharacterBrain.JUCharacterBrain.PressAimMode.HoldToAim;
+
+            CharacterController.LookAtPosition = _netLookPosition.Value;
+            CharacterController.ControllerInputs(
+                moveAxis: _netMoveAxis.Value,
+                ShotInput: shotInputPressed,
+                shotInputDown: shotInputTriggered,
+                meleeAttackInput: meleeAttackTriggered,
+                punchInputDown: punchAttackTriggered,
+                reloadTriggered: reloadTriggered,
+                aimInput: aimInputPressed,
+                aimInputDown: false,
+                isRunPressed: false,
+                isRunPerformed: false,
+                isRollTriggered: rollTriggered,
+                isJumpTriggered: false
+            );
+
+            bool isCrouching = flags.HasFlag(Flags.IsCrouching);
+            if (isCrouching != CharacterController.IsCrouched)
             {
-                if (_netCrouch.Value)
+                if (isCrouching)
                 {
                     CharacterController._Crouch();
                 }
@@ -249,93 +315,84 @@ namespace JU.TPS.Netcode
                 }
             }
 
-            if (CharacterController.IsProne != _netProne.Value)
+            bool isProne = flags.HasFlag(Flags.IsProne);
+            if (isProne != CharacterController.IsProne)
             {
-                if (_netProne.Value)
+                if (isProne)
                 {
                     CharacterController._Prone();
                 }
                 else
                 {
-                    // In the controller GetUp is called twice idk why.
-                    CharacterController._GetUp();
                     CharacterController._GetUp();
                 }
             }
 
-            if (CharacterController.IsRolling != _netRolling.Value)
+            CharacterController.IsRunning = (flags & Flags.IsRunning) != 0;
+            CharacterController.IsSprinting = (flags & Flags.IsSprinting) != 0;
+
+            if (CharacterController.IsWeaponSwitching == false)
             {
-                if (_netRolling.Value)
+                if ((_netRightHandItem.Value != CharacterController.CurrentItemIDRightHand) ||
+                    (_netRightHandItem.Value > 0 && CharacterController.HoldableItemInUseRightHand == null))
                 {
-                    CharacterController._Roll();
+                    CharacterController.SwitchToItem(_netRightHandItem.Value);
                 }
             }
 
-            CharacterController.IsRunning = _netRunning.Value;
-            CharacterController.IsSprinting = _netSprinting.Value;
-            CharacterController.IsRagdolled = _netRagdolled.Value;
-            CharacterController.IsAiming = _netAiming.Value;
-            CharacterController.FiringMode = _netFireMode.Value;
-            CharacterController.FiringModeIK = _netFireModeIk.Value;
-
-            Vector2 moveDirection = _netMoveDirection.Value;
-            bool useMeleeAttack = _netMeleeAttackRequests.Value > 0 && !_meleeAttackRequestConsumed;
-
-            if (useMeleeAttack == true)
-            {
-                moveDirection = Vector2.zero;
-                CharacterController.DefaultUseOfAllItems(true, true, true, false, false, false, true);
-                _meleeAttackRequestConsumed = true;
-            }
-            else if (_netMeleeAttackRequests.Value <= 0)
-            {
-                _meleeAttackRequestConsumed = false;
-            }
-
-            CharacterController.HorizontalX = moveDirection.x;
-            CharacterController.VerticalY = moveDirection.y;
+            _clientLastTriggeredInputFlags = 0;
 
             if (CharacterController.Ragdoller)
             {
-                if (_netRagdolled.Value && CharacterController.Ragdoller.State == JUTPS.PhysicsScripts.AdvancedRagdollController.RagdollState.Animated)
+                if (_netRagdollState.Value == AdvancedRagdollController.RagdollState.Ragdolled || _netRagdollState.Value == AdvancedRagdollController.RagdollState.Animated)
                 {
-                    CharacterController.Ragdoller.State = JUTPS.PhysicsScripts.AdvancedRagdollController.RagdollState.Ragdolled;
+                    CharacterController.Ragdoller.State = _netRagdollState.Value;
                 }
-                else if (_netRagdolled.Value == false && CharacterController.Ragdoller.State == JUTPS.PhysicsScripts.AdvancedRagdollController.RagdollState.Ragdolled)
-                {
-                    CharacterController.Ragdoller.State = JUTPS.PhysicsScripts.AdvancedRagdollController.RagdollState.BlendToAnim;
-                }
-            }
-
-            if (useMeleeAttack == false && CharacterController.Inventory.CurrentRightHandItemID != _rightItemId.Value)
-            {
-                CharacterController.SwitchToItem(_rightItemId.Value, true);
             }
         }
 
-        private void OnAnimatorIK(int layerIndex)
+        [Rpc(SendTo.NotMe)]
+        private void TriggerMeleeInputRpc()
         {
-            if (IsOwner)
-                return;
-
-            // Apply IK weights for non-owner characters.
-            if (CharacterController.IsDead || CharacterController.InverseKinematics == false)
-                return;
-
-            if (CharacterController.IsRolling == false && CharacterController.IsDriving == false)
+            if (IsOwner == true)
             {
-                CharacterController.LeftHandToRespectiveIKPosition(CharacterController.LeftHandWeightIK, CharacterController.LeftHandWeightIK * CharacterController.LeftElbowAdjustWeight);
-                CharacterController.RightHandToRespectiveIKPosition(CharacterController.RightHandWeightIK, CharacterController.RightHandWeightIK * CharacterController.RightElbowAdjustWeight);
-
-                Vector3 LookingPosition = CharacterController.GetLookPosition();
-
-                // Body Look At IK
-                float ProneBodyWeight = (CharacterController.LookAtBodyWeight == 0) ? 0 : 0.1f;
-                float BodyWeight = CharacterController.IsProne ? ProneBodyWeight : CharacterController.LookAtBodyWeight;
-
-                float LookingIntensity = Vector3.Dot(transform.forward, (LookingPosition - transform.position).normalized);
-                CharacterController.LookAtIK(LookingPosition, LookingIntensity * CharacterController.LookWeightIK, BodyWeight, CharacterController.HeadIKBodyWeight);
+                return;
             }
+
+            _clientLastTriggeredInputFlags |= TriggeredInputFlags.MeleeAttackTriggered;
+        }
+
+        [Rpc(SendTo.NotMe)]
+        private void TriggerPunchInputRpc()
+        {
+            if (IsOwner == true)
+            {
+                return;
+            }
+
+            _clientLastTriggeredInputFlags |= TriggeredInputFlags.PunchAttackTriggered;
+        }
+
+        [Rpc(SendTo.NotMe)]
+        private void TriggerRollInputRpc()
+        {
+            if (IsOwner == true)
+            {
+                return;
+            }
+
+            _clientLastTriggeredInputFlags |= TriggeredInputFlags.RollTriggered;
+        }
+
+        [Rpc(SendTo.NotMe)]
+        private void TriggerReloadInputRpc()
+        {
+            if (IsOwner == true)
+            {
+                return;
+            }
+
+            _clientLastTriggeredInputFlags |= TriggeredInputFlags.ReloadTriggered;
         }
     }
 }

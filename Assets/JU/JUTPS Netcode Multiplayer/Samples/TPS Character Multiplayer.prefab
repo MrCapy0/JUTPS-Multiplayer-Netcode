@@ -95,6 +95,21 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3489979222139667187, guid: 5d1a776477408be4294d1082585c2df4,
         type: 3}
+      propertyPath: AutoRun
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3489979222139667187, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
+      propertyPath: WalkOnRunButton
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3489979222139667187, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
+      propertyPath: ItemToEquipOnStart
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3489979222139667187, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
       propertyPath: BlockFireModeOnPunching
       value: 1
       objectReference: {fileID: 0}
