@@ -54,7 +54,7 @@ namespace JUTPS.ActionScripts
                 if (FallDamageIntensity > 0)
                 {
                     //Camera Shake
-                    if (FX.Shaker.GetCurrentCameraInstance() != null)
+                    if (TPSCharacter.IsPlayer && FX.Shaker.GetCurrentCameraInstance() != null)
                     {
                         FX.Shaker.GetCurrentCameraInstance().Shake(FallDamageIntensity + 3, 0.2f, 30, 3, 6, CameraShakeIntensity * FallDamageIntensity / 30);
                     }
@@ -67,7 +67,7 @@ namespace JUTPS.ActionScripts
                     //Damage
                     if (FallDamageIntensity > HeightToGetDamage)
                     {
-                        TPSCharacter.TakeDamage(FallDamageIntensity/4 * Damage);
+                        TPSCharacter.TakeDamage(FallDamageIntensity / 4 * Damage);
                     }
                     FallDamageIntensity = 0;
                     Landed();
