@@ -24,6 +24,9 @@ namespace JU.TPS.Netcode
             IsSprinting = 1 << 1,
             IsCrouching = 1 << 2,
             IsProne = 1 << 3,
+            CanMove = 1 << 4,
+            CanRotate = 1 << 5,
+            DisableAllMove = 1 << 6,
 
             // Inputs.
             ShotInputPressed = 1 << 10,
@@ -46,6 +49,7 @@ namespace JU.TPS.Netcode
 
         private NetworkTransform _networkTransform;
         private NetworkRigidbody _networkRigidbody;
+        private NetworkTransform _hipsNetworkTransform;
 
         private NetworkVariable<Vector2> _netMoveAxis = new NetworkVariable<Vector2>(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         private NetworkVariable<Vector3> _netLookPosition = new NetworkVariable<Vector3>(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -107,6 +111,26 @@ namespace JU.TPS.Netcode
             }
         }
 
+        /// <summary>
+        /// Gets the <see cref="NetworkTransform"/> component attached to the character's hips.
+        /// </summary>
+        public NetworkTransform HipsNetworkTransform
+        {
+            get
+            {
+                if (_hipsNetworkTransform == null)
+                {
+                    Transform characterHips = CharacterController.anim.GetBoneTransform(HumanBodyBones.Hips);
+                    if (characterHips != null)
+                    {
+                        _hipsNetworkTransform = characterHips.gameObject.GetComponent<NetworkTransform>();
+                    }
+                }
+
+                return _hipsNetworkTransform;
+            }
+        }
+
         private void Reset()
         {
             if (Application.isPlaying == false)
@@ -121,9 +145,41 @@ namespace JU.TPS.Netcode
                     _networkTransform = gameObject.AddComponent<NetworkTransform>();
                 }
 
+                _networkTransform.SyncRotAngleX = false;
+                _networkTransform.SyncRotAngleY = false;
+                _networkTransform.SyncRotAngleZ = false;
+                _networkTransform.SyncScaleX = false;
+                _networkTransform.SyncScaleY = false;
+                _networkTransform.SyncScaleZ = false;
+
                 if (NetworkRigidbody == null)
                 {
                     _networkRigidbody = gameObject.AddComponent<NetworkRigidbody>();
+                }
+
+                Transform characterHips = CharacterController.anim.GetBoneTransform(HumanBodyBones.Hips);
+                if (characterHips != null)
+                {
+                    // Child NetworkBehaviours use the root NetworkObject; a nested one would not be spawnable.
+                    NetworkTransform hipsNetworkTransform = characterHips.gameObject.GetComponent<NetworkTransform>();
+                    if (hipsNetworkTransform == null)
+                    {
+                        hipsNetworkTransform = characterHips.gameObject.AddComponent<NetworkTransform>();
+                    }
+
+                    NetworkRigidbody hipsNetworkRigidbody = characterHips.gameObject.GetComponent<NetworkRigidbody>();
+                    if (hipsNetworkRigidbody == null)
+                    {
+                        hipsNetworkRigidbody = characterHips.gameObject.AddComponent<NetworkRigidbody>();
+                    }
+
+                    hipsNetworkTransform.AuthorityMode = NetworkTransform.AuthorityModes.Owner;
+                    hipsNetworkTransform.SyncRotAngleX = false;
+                    hipsNetworkTransform.SyncRotAngleY = true;
+                    hipsNetworkTransform.SyncRotAngleZ = false;
+                    hipsNetworkTransform.SyncScaleX = false;
+                    hipsNetworkTransform.SyncScaleY = false;
+                    hipsNetworkTransform.SyncScaleZ = false;
                 }
             }
 
@@ -137,6 +193,11 @@ namespace JU.TPS.Netcode
 
         private void Awake()
         {
+            Transform characterHips = CharacterController.anim.GetBoneTransform(HumanBodyBones.Hips);
+            if (characterHips != null)
+            {
+                _hipsNetworkTransform = characterHips.gameObject.GetComponent<NetworkTransform>();
+            }
         }
 
         public override void OnNetworkSpawn()
@@ -176,6 +237,11 @@ namespace JU.TPS.Netcode
         {
             UpdateIfOwner();
             UpdateIfNonOwner();
+
+            if (HipsNetworkTransform && CharacterController.Ragdoller)
+            {
+                HipsNetworkTransform.enabled = CharacterController.Ragdoller.State != AdvancedRagdollController.RagdollState.Animated;
+            }
         }
 
         private void EnsureSettings()
@@ -183,6 +249,12 @@ namespace JU.TPS.Netcode
             if (Application.isPlaying == false)
             {
                 NetworkTransform.AuthorityMode = NetworkTransform.AuthorityModes.Owner;
+
+                if (HipsNetworkTransform)
+                {
+                    HipsNetworkTransform.AuthorityMode = NetworkTransform.AuthorityModes.Owner;
+                    HipsNetworkTransform.InLocalSpace = false;
+                }
             }
         }
 
@@ -227,6 +299,9 @@ namespace JU.TPS.Netcode
             if (CharacterController.IsSprinting) flags |= Flags.IsSprinting;
             if (CharacterController.IsCrouched) flags |= Flags.IsCrouching;
             if (CharacterController.IsProne) flags |= Flags.IsProne;
+            if (CharacterController.CanMove) flags |= Flags.CanMove;
+            if (CharacterController.CanRotate) flags |= Flags.CanRotate;
+            if (CharacterController.DisableAllMove) flags |= Flags.DisableAllMove;
 
             // Inputs flags.
             if (shotInputPressed) flags |= Flags.ShotInputPressed;
@@ -285,8 +360,12 @@ namespace JU.TPS.Netcode
 
             // Better to sync, i don't need to worry about triggered/holding button pressed.
             CharacterController.AimMode = JUTPS.CharacterBrain.JUCharacterBrain.PressAimMode.HoldToAim;
-
             CharacterController.LookAtPosition = _netLookPosition.Value;
+
+            CharacterController.CanMove = flags.HasFlag(Flags.CanMove);
+            CharacterController.CanRotate = flags.HasFlag(Flags.CanRotate);
+            CharacterController.DisableAllMove = flags.HasFlag(Flags.DisableAllMove);
+
             CharacterController.ControllerInputs(
                 moveAxis: _netMoveAxis.Value,
                 ShotInput: shotInputPressed,
@@ -344,9 +423,24 @@ namespace JU.TPS.Netcode
 
             if (CharacterController.Ragdoller)
             {
-                if (_netRagdollState.Value == AdvancedRagdollController.RagdollState.Ragdolled || _netRagdollState.Value == AdvancedRagdollController.RagdollState.Animated)
+                if (_netRagdollState.Value == AdvancedRagdollController.RagdollState.Ragdolled && CharacterController.Ragdoller.State != AdvancedRagdollController.RagdollState.Ragdolled)
                 {
                     CharacterController.Ragdoller.State = _netRagdollState.Value;
+                }
+
+                AdvancedRagdollController.RagdollState netRagdollState = _netRagdollState.Value;
+                AdvancedRagdollController.RagdollState characterRagdollState = CharacterController.Ragdoller.State;
+                
+                if (netRagdollState == AdvancedRagdollController.RagdollState.BlendToAnim ||
+                    netRagdollState == AdvancedRagdollController.RagdollState.Animated ||
+                    netRagdollState == AdvancedRagdollController.RagdollState.WaitStablePosition)
+                {
+                    if (characterRagdollState != AdvancedRagdollController.RagdollState.BlendToAnim &&
+                    characterRagdollState != AdvancedRagdollController.RagdollState.Animated &&
+                    characterRagdollState != AdvancedRagdollController.RagdollState.WaitStablePosition)
+                    {
+                        CharacterController.Ragdoller.State = AdvancedRagdollController.RagdollState.WaitStablePosition;
+                    }
                 }
             }
         }

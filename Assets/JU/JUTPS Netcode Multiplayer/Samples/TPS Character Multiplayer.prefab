@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1001 &6476026911824225362
+--- !u!1001 &2873761356180410092
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -8,125 +8,20 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 298541605737155228, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MaxDistance
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 298541605737155228, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MinDistance
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 368973328305914222, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MaxDistance
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 368973328305914222, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MinDistance
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 368973328305914222, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: panLevelCustomCurve.m_Curve.Array.data[0].value
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1565515331895170645, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: Unlocked
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1729573646868172789, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MaxDistance
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 1729573646868172789, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MinDistance
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 1729573646868172789, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: panLevelCustomCurve.m_Curve.Array.data[0].value
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2138389604940789306, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MaxDistance
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 2138389604940789306, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MinDistance
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 2138389604940789306, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: panLevelCustomCurve.m_Curve.Array.data[0].value
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2138389604946973898, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MaxDistance
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 2138389604946973898, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MinDistance
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 3489979222139667184, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MaxDistance
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 3489979222139667184, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MinDistance
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 3489979222139667184, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: panLevelCustomCurve.m_Curve.Array.data[0].value
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3489979222139667187, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: AutoRun
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3489979222139667187, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: WalkOnRunButton
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3489979222139667187, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: ItemToEquipOnStart
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3489979222139667187, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: BlockFireModeOnPunching
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 4027446090950943866, guid: 5d1a776477408be4294d1082585c2df4,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 22.2
+      value: 4.97514
       objectReference: {fileID: 0}
     - target: {fileID: 4027446090950943866, guid: 5d1a776477408be4294d1082585c2df4,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.6
+      value: -0.2194
       objectReference: {fileID: 0}
     - target: {fileID: 4027446090950943866, guid: 5d1a776477408be4294d1082585c2df4,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 38.1
+      value: 14.09
       objectReference: {fileID: 0}
     - target: {fileID: 4027446090950943866, guid: 5d1a776477408be4294d1082585c2df4,
         type: 3}
@@ -166,92 +61,7 @@ PrefabInstance:
     - target: {fileID: 4372868026506870464, guid: 5d1a776477408be4294d1082585c2df4,
         type: 3}
       propertyPath: m_Name
-      value: TPS Character Multiplayer
-      objectReference: {fileID: 0}
-    - target: {fileID: 4372868026506870464, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4426581993129995599, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MaxDistance
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 4426581993129995599, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MinDistance
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 4913474061923817733, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MaxDistance
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 4913474061923817733, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MinDistance
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 5126190373755706608, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MaxDistance
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 5126190373755706608, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MinDistance
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 5126190373755706608, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: panLevelCustomCurve.m_Curve.Array.data[0].value
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5126190374081222729, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MaxDistance
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 5126190374081222729, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MinDistance
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 5126190374081222729, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: panLevelCustomCurve.m_Curve.Array.data[0].value
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8578776239651701549, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MaxDistance
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 8578776239651701549, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MinDistance
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 8578776239651701549, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: panLevelCustomCurve.m_Curve.Array.data[0].value
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8578776240932149074, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MaxDistance
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 8578776240932149074, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: MinDistance
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 8578776240932149074, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      propertyPath: panLevelCustomCurve.m_Curve.Array.data[0].value
-      value: 1
+      value: TPS Character Variant
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -260,120 +70,47 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4372868026506870464, guid: 5d1a776477408be4294d1082585c2df4,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 4118000266395096686}
+      addedObject: {fileID: 3033901418940652867}
     - targetCorrespondingSourceObject: {fileID: 4372868026506870464, guid: 5d1a776477408be4294d1082585c2df4,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: -4866723829573085533}
+      addedObject: {fileID: 1353008650328945670}
     - targetCorrespondingSourceObject: {fileID: 4372868026506870464, guid: 5d1a776477408be4294d1082585c2df4,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: -3227373679069331640}
+      addedObject: {fileID: 1345780702329996216}
     - targetCorrespondingSourceObject: {fileID: 4372868026506870464, guid: 5d1a776477408be4294d1082585c2df4,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: -6469767879806286420}
-    - targetCorrespondingSourceObject: {fileID: 4372868026506870464, guid: 5d1a776477408be4294d1082585c2df4,
+      addedObject: {fileID: 524628393119026516}
+    - targetCorrespondingSourceObject: {fileID: 237078857134818959, guid: 5d1a776477408be4294d1082585c2df4,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 3742349982202281765}
-    - targetCorrespondingSourceObject: {fileID: 8992783576066269261, guid: 5d1a776477408be4294d1082585c2df4,
+      addedObject: {fileID: 6383427618178508643}
+    - targetCorrespondingSourceObject: {fileID: 237078857134818959, guid: 5d1a776477408be4294d1082585c2df4,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 7932341408698361260}
-    - targetCorrespondingSourceObject: {fileID: 2689200520909229938, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 6979347312318755144}
-    - targetCorrespondingSourceObject: {fileID: 4372868026816741513, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 3298976139836321707}
-    - targetCorrespondingSourceObject: {fileID: 1784158056390212874, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 8182699327436606617}
-    - targetCorrespondingSourceObject: {fileID: 8992783576089428669, guid: 5d1a776477408be4294d1082585c2df4,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 554870933984928227}
+      addedObject: {fileID: 4654068647584006989}
   m_SourcePrefab: {fileID: 100100000, guid: 5d1a776477408be4294d1082585c2df4, type: 3}
---- !u!1 &2671673816997963503 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8992783576089428669, guid: 5d1a776477408be4294d1082585c2df4,
-    type: 3}
-  m_PrefabInstance: {fileID: 6476026911824225362}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &554870933984928227
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2671673816997963503}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bbf354aeb3def945bba36d6f1cc9a4a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: JUTPS.Multiplayer.Netcode::JU.TPS.Netcode.JUNetcodeWeapon
-  ShowTopMostFoldoutHeaderGroup: 1
---- !u!1 &2671673817004409887 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8992783576066269261, guid: 5d1a776477408be4294d1082585c2df4,
-    type: 3}
-  m_PrefabInstance: {fileID: 6476026911824225362}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &7932341408698361260
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2671673817004409887}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bbf354aeb3def945bba36d6f1cc9a4a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: JUTPS.Multiplayer.Netcode::JU.TPS.Netcode.JUNetcodeWeapon
-  ShowTopMostFoldoutHeaderGroup: 1
---- !u!1 &4692155317011421528 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1784158056390212874, guid: 5d1a776477408be4294d1082585c2df4,
-    type: 3}
-  m_PrefabInstance: {fileID: 6476026911824225362}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &8182699327436606617
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4692155317011421528}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bbf354aeb3def945bba36d6f1cc9a4a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: JUTPS.Multiplayer.Netcode::JU.TPS.Netcode.JUNetcodeWeapon
-  ShowTopMostFoldoutHeaderGroup: 1
---- !u!1 &7309610918621338258 stripped
+--- !u!1 &1967557329666322476 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4372868026506870464, guid: 5d1a776477408be4294d1082585c2df4,
     type: 3}
-  m_PrefabInstance: {fileID: 6476026911824225362}
+  m_PrefabInstance: {fileID: 2873761356180410092}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &4118000266395096686
+--- !u!114 &3033901418940652867
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7309610918621338258}
+  m_GameObject: {fileID: 1967557329666322476}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3501707694
+  GlobalObjectIdHash: 2868853293
   InScenePlacedSourceGlobalObjectIdHash: 0
   m_InScenePlacedDisabledByDefault: 0
   DeferredDespawnTick: 0
@@ -382,36 +119,19 @@ MonoBehaviour:
   SynchronizeTransform: 1
   m_InScenePlaced: 0
   ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
+  SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &-4866723829573085533
+--- !u!114 &1353008650328945670
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7309610918621338258}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ca21c957014d5af4eb979dabef2a15af, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: JUTPS.Multiplayer.Netcode::JUNetcodeCharacterController
-  ShowTopMostFoldoutHeaderGroup: 1
-  UserInterfacePrefab: {fileID: 892490308667894269, guid: 9d63974dc0e5a674ca23b9482bcbcf08,
-    type: 3}
-  CameraControllerPrefab: {fileID: 3243631560226216736, guid: 3f9896eb08ade7b4ab7b111e294279d4,
-    type: 3}
---- !u!114 &-3227373679069331640
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7309610918621338258}
+  m_GameObject: {fileID: 1967557329666322476}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
@@ -435,12 +155,12 @@ MonoBehaviour:
   SyncPositionX: 1
   SyncPositionY: 1
   SyncPositionZ: 1
-  SyncRotAngleX: 1
+  SyncRotAngleX: 0
   SyncRotAngleY: 1
-  SyncRotAngleZ: 1
-  SyncScaleX: 1
-  SyncScaleY: 1
-  SyncScaleZ: 1
+  SyncRotAngleZ: 0
+  SyncScaleX: 0
+  SyncScaleY: 0
+  SyncScaleZ: 0
   PositionThreshold: 0.001
   RotAngleThreshold: 0.01
   ScaleThreshold: 0.01
@@ -451,13 +171,13 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 0
---- !u!114 &-6469767879806286420
+--- !u!114 &1345780702329996216
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7309610918621338258}
+  m_GameObject: {fileID: 1967557329666322476}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f6c0be61502bb534f922ebb746851216, type: 3}
@@ -468,54 +188,89 @@ MonoBehaviour:
   UseRigidBodyForMotion: 0
   AutoUpdateKinematicState: 1
   AutoSetKinematicOnDespawn: 1
---- !u!114 &3742349982202281765
+--- !u!114 &524628393119026516
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7309610918621338258}
+  m_GameObject: {fileID: 1967557329666322476}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7b9e29ce1d839c94f96bd3a8f221260b, type: 3}
+  m_Script: {fileID: 11500000, guid: ca21c957014d5af4eb979dabef2a15af, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: JUTPS.Multiplayer.Netcode::JU.TPS.Netcode.JUNetcodeHealth
+  m_EditorClassIdentifier: JUTPS.Multiplayer.Netcode::JU.TPS.Netcode.JUNetcodeCharacterController
   ShowTopMostFoldoutHeaderGroup: 1
---- !u!1 &7309610920575263963 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 4372868026816741513, guid: 5d1a776477408be4294d1082585c2df4,
+  UserInterfacePrefab: {fileID: 892490308667894269, guid: 9d63974dc0e5a674ca23b9482bcbcf08,
     type: 3}
-  m_PrefabInstance: {fileID: 6476026911824225362}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &3298976139836321707
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7309610920575263963}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bbf354aeb3def945bba36d6f1cc9a4a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: JUTPS.Multiplayer.Netcode::JU.TPS.Netcode.JUNetcodeWeapon
-  ShowTopMostFoldoutHeaderGroup: 1
---- !u!1 &8975266731269303072 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2689200520909229938, guid: 5d1a776477408be4294d1082585c2df4,
+  CameraControllerPrefab: {fileID: 3243631560226216736, guid: 3f9896eb08ade7b4ab7b111e294279d4,
     type: 3}
-  m_PrefabInstance: {fileID: 6476026911824225362}
+--- !u!1 &2642455524677126243 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 237078857134818959, guid: 5d1a776477408be4294d1082585c2df4,
+    type: 3}
+  m_PrefabInstance: {fileID: 2873761356180410092}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &6979347312318755144
+--- !u!114 &6383427618178508643
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8975266731269303072}
+  m_GameObject: {fileID: 2642455524677126243}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bbf354aeb3def945bba36d6f1cc9a4a, type: 3}
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: JUTPS.Multiplayer.Netcode::JU.TPS.Netcode.JUNetcodeWeapon
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkTransform
   ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
+  AuthorityMode: 1
+  TickSyncChildren: 0
+  UseUnreliableDeltas: 0
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 0
+  SyncRotAngleY: 0
+  SyncRotAngleZ: 0
+  SyncScaleX: 0
+  SyncScaleY: 0
+  SyncScaleZ: 0
+  PositionThreshold: 0.001
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
+  InLocalSpace: 0
+  SwitchTransformSpaceWhenParented: 0
+  Interpolate: 1
+  SlerpPosition: 0
+--- !u!114 &4654068647584006989
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2642455524677126243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6c0be61502bb534f922ebb746851216, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkRigidbody
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkRigidbodyBaseExpanded: 0
+  UseRigidBodyForMotion: 0
+  AutoUpdateKinematicState: 1
+  AutoSetKinematicOnDespawn: 1
