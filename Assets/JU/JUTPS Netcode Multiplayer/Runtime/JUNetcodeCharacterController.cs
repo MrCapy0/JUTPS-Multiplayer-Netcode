@@ -215,29 +215,6 @@ namespace JU.TPS.Netcode
             }
         }
 
-        private void OnStartEnterVehicle(JUVehicle vehicle)
-        {
-            if (vehicle.TryGetComponent(out NetworkObject vehicleNetworkObject))
-            {
-                OnStartEnterVehicleRpc(vehicleNetworkObject);
-            }
-            else
-            {
-                Debug.LogError($"Vehicle {vehicle} does not have a NetworkObject component.");
-            }
-        }
-
-        private void OnCancelEnterVehicle(JUVehicle vehicle)
-        {
-            OnCancelEnterVehicleRpc();
-        }
-
-
-        private void OnStartExitVehicle(JUVehicle vehicle)
-        {
-            OnStartExitVehicleRpc();
-        }
-
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
@@ -513,6 +490,29 @@ namespace JU.TPS.Netcode
                     netcodeVehicle.SetOwnership(OwnerClientId);
                 }
             }
+        }
+
+        private void OnStartEnterVehicle(JUVehicle vehicle)
+        {
+            if (vehicle.TryGetComponent(out NetworkObject vehicleNetworkObject))
+            {
+                OnStartEnterVehicleRpc(vehicleNetworkObject);
+            }
+            else
+            {
+                Debug.LogError($"Vehicle {vehicle} does not have a NetworkObject component.");
+            }
+        }
+
+        private void OnCancelEnterVehicle(JUVehicle vehicle)
+        {
+            OnCancelEnterVehicleRpc();
+        }
+
+
+        private void OnStartExitVehicle(JUVehicle vehicle)
+        {
+            OnStartExitVehicleRpc();
         }
 
         [Rpc(SendTo.NotMe)]

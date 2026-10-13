@@ -6,6 +6,7 @@ namespace JU.TPS.Netcode
     /// <summary>
     /// Netcode synchronization implementation for <see cref="IHealth"/> component.
     /// </summary>
+    [DisallowMultipleComponent]
     [RequireComponent(typeof(IHealth))]
     [RequireComponent(typeof(NetworkObject))]
     public class JUNetcodeHealth : NetworkBehaviour

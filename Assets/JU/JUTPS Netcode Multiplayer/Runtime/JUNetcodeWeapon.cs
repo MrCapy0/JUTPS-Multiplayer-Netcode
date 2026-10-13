@@ -7,6 +7,7 @@ namespace JU.TPS.Netcode
     /// <summary>
     /// Netcode multiplayer synchronization for <see cref="Weapon"/>.
     /// </summary>
+    [DisallowMultipleComponent]
     public class JUNetcodeWeapon : JUNetcodeItem<Weapon>
     {
         private NetworkVariable<int> _netTotalBullets = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);

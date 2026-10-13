@@ -83,6 +83,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 524628393119026516}
+    - targetCorrespondingSourceObject: {fileID: 4372868026506870464, guid: 5d1a776477408be4294d1082585c2df4,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 720527376188597748}
     - targetCorrespondingSourceObject: {fileID: 237078857134818959, guid: 5d1a776477408be4294d1082585c2df4,
         type: 3}
       insertIndex: -1
@@ -205,6 +209,19 @@ MonoBehaviour:
     type: 3}
   CameraControllerPrefab: {fileID: 3243631560226216736, guid: 3f9896eb08ade7b4ab7b111e294279d4,
     type: 3}
+--- !u!114 &720527376188597748
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1967557329666322476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b9e29ce1d839c94f96bd3a8f221260b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: JUTPS.Multiplayer.Netcode::JU.TPS.Netcode.JUNetcodeHealth
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!1 &2642455524677126243 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 237078857134818959, guid: 5d1a776477408be4294d1082585c2df4,

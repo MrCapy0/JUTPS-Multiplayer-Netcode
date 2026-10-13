@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace JU.TPS.Netcode
 {
+    [DisallowMultipleComponent]
     [RequireComponent(typeof(JUWheeledVehicle))]
     public class JUNetcodeVehicle : NetworkBehaviour
     {
