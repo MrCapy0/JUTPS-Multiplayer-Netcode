@@ -211,6 +211,7 @@ namespace JU.TPS.Netcode
             {
                 _driveAbility.OnStartEnterVehicle += OnStartEnterVehicle;
                 _driveAbility.OnStartExitVehicle += OnStartExitVehicle;
+                _driveAbility.OnCancelEnterVehicle += OnCancelEnterVehicle;
             }
         }
 
@@ -224,6 +225,11 @@ namespace JU.TPS.Netcode
             {
                 Debug.LogError($"Vehicle {vehicle} does not have a NetworkObject component.");
             }
+        }
+
+        private void OnCancelEnterVehicle(JUVehicle vehicle)
+        {
+            OnCancelEnterVehicleRpc();
         }
 
 
@@ -594,6 +600,26 @@ namespace JU.TPS.Netcode
             JUNetcodeVehicle netcodeVehicle = GetNetcodeVehicle(currentVehicleNetworkObject);
             netcodeVehicle.SetOwnership(_vehicleOriginalOwnerId);
             _driveAbility.ExitVehicle();
+            NetworkTransform.enabled = true;
+
+            if (IsOwner)
+            {
+                _netCurrentVehicle.Value = new();
+            }
+        }
+
+        [Rpc(SendTo.NotMe)]
+        private void OnCancelEnterVehicleRpc()
+        {
+            if (_driveAbility == null)
+            {
+                return;
+            }
+
+            NetworkObject currentVehicleNetworkObject = GetNetworkObject(_driveAbility.CurrentVehicle);
+            JUNetcodeVehicle netcodeVehicle = GetNetcodeVehicle(currentVehicleNetworkObject);
+            netcodeVehicle.SetOwnership(_vehicleOriginalOwnerId);
+            _driveAbility.CancelEnterVehicle();
             NetworkTransform.enabled = true;
 
             if (IsOwner)
