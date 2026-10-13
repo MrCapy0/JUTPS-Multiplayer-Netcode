@@ -1,0 +1,245 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &647107942827028737
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1778044854776682436, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 4.2252776e-17
+      objectReference: {fileID: 0}
+    - target: {fileID: 1778044854776682436, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.55290854
+      objectReference: {fileID: 0}
+    - target: {fileID: 1778044854776682436, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.00066667795
+      objectReference: {fileID: 0}
+    - target: {fileID: 2840348804009549351, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 4.0175653e-17
+      objectReference: {fileID: 0}
+    - target: {fileID: 2840348804009549351, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.29291907
+      objectReference: {fileID: 0}
+    - target: {fileID: 2840348804009549351, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.001693353
+      objectReference: {fileID: 0}
+    - target: {fileID: 6038723665020530134, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.000665122
+      objectReference: {fileID: 0}
+    - target: {fileID: 6038723665020530134, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6038723665020530134, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6078949342818704903, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.4299994
+      objectReference: {fileID: 0}
+    - target: {fileID: 6078949342818704903, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -9.630244e-17
+      objectReference: {fileID: 0}
+    - target: {fileID: 6078949342818704903, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 9.639999
+      objectReference: {fileID: 0}
+    - target: {fileID: 6078949342818704903, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6078949342818704903, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6078949342818704903, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6078949342818704903, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6078949342818704903, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6078949342818704903, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 6078949342818704903, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6851967986656199869, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_Name
+      value: Motorcycle Multiplayer
+      objectReference: {fileID: 0}
+    - target: {fileID: 6851967986656199869, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6851967986656199869, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8624637801665457012}
+    - targetCorrespondingSourceObject: {fileID: 6851967986656199869, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4618926597662806547}
+    - targetCorrespondingSourceObject: {fileID: 6851967986656199869, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -6080958979525294031}
+    - targetCorrespondingSourceObject: {fileID: 6851967986656199869, guid: b11f799353c606a408a3ab77b46fa3e6,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -278452302936329758}
+  m_SourcePrefab: {fileID: 100100000, guid: b11f799353c606a408a3ab77b46fa3e6, type: 3}
+--- !u!1 &6335977169137972668 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6851967986656199869, guid: b11f799353c606a408a3ab77b46fa3e6,
+    type: 3}
+  m_PrefabInstance: {fileID: 647107942827028737}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8624637801665457012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6335977169137972668}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 3351337374
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  m_InScenePlacedDisabledByDefault: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  m_InScenePlaced: 0
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &4618926597662806547
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6335977169137972668}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkTransform
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
+  AuthorityMode: 1
+  TickSyncChildren: 0
+  UseUnreliableDeltas: 0
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 1
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 1
+  SyncScaleX: 0
+  SyncScaleY: 0
+  SyncScaleZ: 0
+  PositionThreshold: 0.001
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
+  InLocalSpace: 0
+  SwitchTransformSpaceWhenParented: 0
+  Interpolate: 1
+  SlerpPosition: 0
+--- !u!114 &-6080958979525294031
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6335977169137972668}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6c0be61502bb534f922ebb746851216, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkRigidbody
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkRigidbodyBaseExpanded: 0
+  UseRigidBodyForMotion: 0
+  AutoUpdateKinematicState: 1
+  AutoSetKinematicOnDespawn: 1
+--- !u!114 &-278452302936329758
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6335977169137972668}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23bc5bfcfd660aa49b73a01190f302d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: JUTPS.Multiplayer.Netcode::JU.TPS.Netcode.JUNetcodeVehicle
+  ShowTopMostFoldoutHeaderGroup: 1

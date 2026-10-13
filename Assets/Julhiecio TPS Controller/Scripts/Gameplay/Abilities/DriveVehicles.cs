@@ -22,22 +22,25 @@ namespace JUTPS.ActionScripts
 
         /// Called when the character start enter on a <see cref="Vehicle"/>.
         /// </summary>
-        public UnityAction OnStartEnterVehicle;
+        public UnityAction<JUVehicle> OnStartEnterVehicle;
 
         /// <summary>
         /// Called when the character start exit from a <see cref="CurrentVehicle"/>.
         /// </summary>
-        public UnityAction OnStartExitVehicle;
+        public UnityAction<JUVehicle> OnStartExitVehicle;
 
         /// <summary>
         /// Called when the character cancel enter on a <see cref="Vehicle"/> caused by character movement or ragdoll during the enter vehicle state.
         /// </summary>
-        public UnityAction OnCancelEnterVehicle;
+        public UnityAction<JUVehicle> OnCancelEnterVehicle;
 
         /// <summary>
         /// Called when the character cancel exit from a <see cref="CurrentVehicle"/> caused by character ragdoll during the exit vehicle state.
         /// </summary>
-        public UnityAction OnCancelExitVehicle;
+        public UnityAction<JUVehicle> OnCancelExitVehicle;
+
+        public static event UnityAction<JUVehicle, JUCharacterController> OnEnterAnyVehicle;
+        public static event UnityAction<JUVehicle, JUCharacterController> OnExitAnyVehicle;
 
         /// <summary>
         /// The vehicle used to start game driving.
@@ -292,13 +295,15 @@ namespace JUTPS.ActionScripts
             IsCharacterEntering = true;
             InteractionSystem.BlockInteractions = true;
 
-            OnStartEnterVehicle?.Invoke();
+            OnStartEnterVehicle?.Invoke(CurrentVehicle);
         }
 
         private void CancelEnterVehicle()
         {
             if (!IsCharacterEntering || IsCharacterExiting)
                 return;
+
+            JUVehicle vehicleToCancel = CurrentVehicle;
 
             IsCharacterEntering = false;
             CurrentVehicle = null;
@@ -307,7 +312,7 @@ namespace JUTPS.ActionScripts
             TPSCharacter.enableMove();
             CancelInvoke(nameof(EndEnterVehicleState));
 
-            OnCancelEnterVehicle?.Invoke();
+            OnCancelEnterVehicle?.Invoke(vehicleToCancel);
         }
 
         private void EndEnterVehicleState()
@@ -336,6 +341,8 @@ namespace JUTPS.ActionScripts
 
             UpdateDrivingState();
 
+            OnEnterAnyVehicle?.Invoke(CurrentVehicle, TPSCharacter);
+
             OnEnterVehicle?.Invoke();
         }
 
@@ -351,14 +358,14 @@ namespace JUTPS.ActionScripts
             if (DisableCharacterOnEnter)
                 TPSCharacter.gameObject.SetActive(true);
 
-            OnStartExitVehicle?.Invoke();
+            OnStartExitVehicle?.Invoke(CurrentVehicle);
         }
 
         private void CancelExitVehicle()
         {
             EndEnterVehicleState();
 
-            OnCancelExitVehicle?.Invoke();
+            OnCancelExitVehicle?.Invoke(CurrentVehicle);
         }
 
         private void EndExitVehicleState()
@@ -369,6 +376,8 @@ namespace JUTPS.ActionScripts
             if (!IsDriving && CurrentVehicle)
                 TPSCharacter.PhysicalIgnore(CurrentVehicle.gameObject, ignore: false);
 
+            JUVehicle lastVehicle = CurrentVehicle;
+
             IsCharacterExiting = false;
             CurrentVehicle = null;
             CurrentVehicleCharacterIK = null;
@@ -377,6 +386,7 @@ namespace JUTPS.ActionScripts
             TPSCharacter.enableMove();
 
             OnExitVehicle?.Invoke();
+            OnExitAnyVehicle?.Invoke(lastVehicle, TPSCharacter);
         }
 
         private void OnCharacterStartDriving()

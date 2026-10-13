@@ -1,6 +1,9 @@
 using JUTPS;
+using JUTPS.ActionScripts;
 using JUTPS.CameraSystems;
+using JUTPS.InteractionSystem;
 using JUTPS.PhysicsScripts;
+using JUTPS.VehicleSystem;
 using Unity.Netcode;
 using Unity.Netcode.Components;
 using UnityEngine;
@@ -44,8 +47,11 @@ namespace JU.TPS.Netcode
             ReloadTriggered = 1 << 3
         }
 
+        private ulong _vehicleOriginalOwnerId;
         private float _enableWeaponSwitchingTime;
+
         private JUCharacterController _tps;
+        private DriveVehicles _driveAbility;
 
         private NetworkTransform _networkTransform;
         private NetworkRigidbody _networkRigidbody;
@@ -56,6 +62,7 @@ namespace JU.TPS.Netcode
         private NetworkVariable<Flags> _netStateFlags = new NetworkVariable<Flags>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         private NetworkVariable<int> _netRightHandItem = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         private NetworkVariable<AdvancedRagdollController.RagdollState> _netRagdollState = new NetworkVariable<AdvancedRagdollController.RagdollState>(AdvancedRagdollController.RagdollState.Animated, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private NetworkVariable<NetworkObjectReference> _netCurrentVehicle = new NetworkVariable<NetworkObjectReference>(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
         private Flags _clientLastFlags;
         private TriggeredInputFlags _clientLastTriggeredInputFlags;
@@ -198,6 +205,31 @@ namespace JU.TPS.Netcode
             {
                 _hipsNetworkTransform = characterHips.gameObject.GetComponent<NetworkTransform>();
             }
+
+            _driveAbility = GetComponent<DriveVehicles>();
+            if (_driveAbility != null)
+            {
+                _driveAbility.OnStartEnterVehicle += OnStartEnterVehicle;
+                _driveAbility.OnStartExitVehicle += OnStartExitVehicle;
+            }
+        }
+
+        private void OnStartEnterVehicle(JUVehicle vehicle)
+        {
+            if (vehicle.TryGetComponent(out NetworkObject vehicleNetworkObject))
+            {
+                OnStartEnterVehicleRpc(vehicleNetworkObject);
+            }
+            else
+            {
+                Debug.LogError($"Vehicle {vehicle} does not have a NetworkObject component.");
+            }
+        }
+
+
+        private void OnStartExitVehicle(JUVehicle vehicle)
+        {
+            OnStartExitVehicleRpc();
         }
 
         public override void OnNetworkSpawn()
@@ -210,9 +242,22 @@ namespace JU.TPS.Netcode
             {
                 if (CharacterController.IsPlayer)
                 {
-                    Instantiate(UserInterfacePrefab);
-                    var cameraController = Instantiate(CameraControllerPrefab);
-                    CharacterController.MyPivotCamera = cameraController;
+                    if (UserInterfacePrefab != null)
+                    {
+                        Instantiate(UserInterfacePrefab);
+                    }
+
+                    if (CameraControllerPrefab != null)
+                    {
+                        TPSCameraController cameraController = Instantiate(CameraControllerPrefab);
+                        CharacterController.MyPivotCamera = cameraController;
+                    }
+
+                    if (_driveAbility != null && _driveAbility.IsDriving)
+                    {
+                        NetworkObject currentVehicleNetworkObject = GetNetworkObject(_driveAbility.CurrentVehicle);
+                        DriveVehicle(currentVehicleNetworkObject, true);
+                    }
                 }
             }
             else
@@ -222,15 +267,11 @@ namespace JU.TPS.Netcode
                 CharacterController.UseDefaultControllerInput = false;
                 CharacterController.Inputs = null;
 
-                CharacterController.IKPositionLeftHand.SetParent(CharacterController.transform);
-                CharacterController.IKPositionRightHand.SetParent(CharacterController.transform);
-                CharacterController.LeftHandIKPositionTarget.SetParent(CharacterController.transform);
-                CharacterController.RightHandIKPositionTarget.SetParent(CharacterController.transform);
+                if (CharacterController.TryGetComponent(out JUInteractionSystem interactionSystem))
+                {
+                    interactionSystem.UseDefaultInputs = false;
+                }
             }
-        }
-
-        public override void OnNetworkDespawn()
-        {
         }
 
         private void Update()
@@ -430,7 +471,7 @@ namespace JU.TPS.Netcode
 
                 AdvancedRagdollController.RagdollState netRagdollState = _netRagdollState.Value;
                 AdvancedRagdollController.RagdollState characterRagdollState = CharacterController.Ragdoller.State;
-                
+
                 if (netRagdollState == AdvancedRagdollController.RagdollState.BlendToAnim ||
                     netRagdollState == AdvancedRagdollController.RagdollState.Animated ||
                     netRagdollState == AdvancedRagdollController.RagdollState.WaitStablePosition)
@@ -441,6 +482,29 @@ namespace JU.TPS.Netcode
                     {
                         CharacterController.Ragdoller.State = AdvancedRagdollController.RagdollState.WaitStablePosition;
                     }
+                }
+            }
+        }
+
+        private void DriveVehicle(NetworkObjectReference vehicleRef, bool immediately)
+        {
+            if (_driveAbility == null)
+            {
+                return;
+            }
+
+            if (vehicleRef.TryGet(out NetworkObject vehicleNetworkObject))
+            {
+                JUVehicle vehicle = vehicleNetworkObject.GetComponent<JUVehicle>();
+                _driveAbility.DriveVehicle(vehicle, vehicle.GetComponent<JUVehicleCharacterIK>(), immediately);
+                NetworkTransform.enabled = false;
+
+                if (IsOwner)
+                {
+                    _vehicleOriginalOwnerId = vehicleNetworkObject.OwnerClientId;
+                    JUNetcodeVehicle netcodeVehicle = GetNetcodeVehicle(vehicleNetworkObject);
+
+                    netcodeVehicle.SetOwnership(OwnerClientId);
                 }
             }
         }
@@ -487,6 +551,82 @@ namespace JU.TPS.Netcode
             }
 
             _clientLastTriggeredInputFlags |= TriggeredInputFlags.ReloadTriggered;
+        }
+
+        [Rpc(SendTo.NotMe)]
+        private void OnStartEnterVehicleRpc(NetworkObjectReference vehicleRef)
+        {
+            if (_driveAbility == null)
+            {
+                return;
+            }
+
+            if (IsOwner)
+            {
+                vehicleRef.TryGet(out NetworkObject vehicleNetworkObject);
+                JUNetcodeVehicle netcodeVehicle = vehicleNetworkObject.GetComponent<JUNetcodeVehicle>();
+                if (netcodeVehicle == null)
+                {
+                    Debug.LogError($"Vehicle {vehicleNetworkObject.name} does not have a {nameof(JUNetcodeVehicle)} component.");
+                    return;
+                }
+
+                _vehicleOriginalOwnerId = vehicleNetworkObject.OwnerClientId;
+                netcodeVehicle.SetOwnership(OwnerClientId);
+
+                _netCurrentVehicle.Value = vehicleRef;
+                return;
+            }
+
+            DriveVehicle(vehicleRef, false);
+        }
+
+
+        [Rpc(SendTo.NotMe)]
+        private void OnStartExitVehicleRpc()
+        {
+            if (_driveAbility == null)
+            {
+                return;
+            }
+
+            NetworkObject currentVehicleNetworkObject = GetNetworkObject(_driveAbility.CurrentVehicle);
+            JUNetcodeVehicle netcodeVehicle = GetNetcodeVehicle(currentVehicleNetworkObject);
+            netcodeVehicle.SetOwnership(_vehicleOriginalOwnerId);
+            _driveAbility.ExitVehicle();
+            NetworkTransform.enabled = true;
+
+            if (IsOwner)
+            {
+                _netCurrentVehicle.Value = new();
+            }
+        }
+
+        private JUNetcodeVehicle GetNetcodeVehicle(NetworkObject vehicleNetworkObject)
+        {
+            JUNetcodeVehicle netcodeVehicle = vehicleNetworkObject.GetComponent<JUNetcodeVehicle>();
+            if (netcodeVehicle == null)
+            {
+                Debug.LogError($"Vehicle {vehicleNetworkObject.name} does not have a {nameof(JUNetcodeVehicle)} component.");
+            }
+
+            return netcodeVehicle;
+        }
+
+        private NetworkObject GetNetworkObject(MonoBehaviour monoBehaviour)
+        {
+            return GetNetworkObject(monoBehaviour.gameObject);
+        }
+
+        private NetworkObject GetNetworkObject(GameObject gameObject)
+        {
+            NetworkObject networkObject = gameObject.GetComponent<NetworkObject>();
+            if (networkObject == null)
+            {
+                Debug.LogError($"GameObject {gameObject.name} does not have a {nameof(NetworkObject)} component.");
+            }
+
+            return networkObject;
         }
     }
 }
