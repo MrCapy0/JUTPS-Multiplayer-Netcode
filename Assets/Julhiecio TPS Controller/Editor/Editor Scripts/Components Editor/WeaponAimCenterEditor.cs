@@ -35,6 +35,10 @@ namespace JUTPS.CustomEditors
             {
                 w.CreateWeaponPositionReference(w.WeaponPositionName.Count + " | New Weapon Position Reference");
             }
+
+            EditorGUILayout.Space(10);
+            DrawRotationLimits();
+
             serializedObject.ApplyModifiedProperties();
         }
 
@@ -65,6 +69,25 @@ namespace JUTPS.CustomEditors
                 serializedObject.FindProperty("WeaponPositionTransform").GetArrayElementAtIndex(index).objectReferenceValue = EditorGUILayout.ObjectField("  Transform Reference", w.WeaponPositionTransform[index], typeof(Transform), true) as Transform;
             }
             EditorGUILayout.Space(5);
+        }
+
+        private void DrawRotationLimits()
+        {
+            var LimitLocalRotations = serializedObject.FindProperty("LimitLocalRotations");
+            var MinAngles = serializedObject.FindProperty("MinAngles");
+            var MaxAngles = serializedObject.FindProperty("MaxAngles");
+
+            EditorGUILayout.PropertyField(LimitLocalRotations);
+
+            if (LimitLocalRotations.boolValue)
+            {
+                EditorGUI.indentLevel++;
+
+                EditorGUILayout.PropertyField(MinAngles);
+                EditorGUILayout.PropertyField(MaxAngles);
+
+                EditorGUI.indentLevel--;
+            }
         }
     }
 }

@@ -39,9 +39,6 @@ namespace JUTPS.ActionScripts
         /// </summary>
         public UnityAction<JUVehicle> OnCancelExitVehicle;
 
-        public static event UnityAction<JUVehicle, JUCharacterController> OnEnterAnyVehicle;
-        public static event UnityAction<JUVehicle, JUCharacterController> OnExitAnyVehicle;
-
         /// <summary>
         /// The vehicle used to start game driving.
         /// </summary>
@@ -76,12 +73,12 @@ namespace JUTPS.ActionScripts
         /// <summary>
         /// Called when the character enter on a <see cref="Vehicle"/>.
         /// </summary>
-        public UnityEvent OnEnterVehicle;
+        public UnityEvent<JUVehicle> OnEnterVehicle;
 
         /// <summary>
         /// Called when the character exit from a <see cref="Vehicle"/>.
         /// </summary>
-        public UnityEvent OnExitVehicle;
+        public UnityEvent<JUVehicle> OnExitVehicle;
 
         /// <summary>
         /// Return true if the character is inside of a <see cref="Vehicle"/>.
@@ -276,6 +273,36 @@ namespace JUTPS.ActionScripts
             Invoke(nameof(EndExitVehicleState), DelayToReenableAction);
         }
 
+        /// <summary>
+        /// Cancels the process of entering the current vehicle.
+        /// </summary>
+        public void CancelEnterVehicle()
+        {
+            if (!IsCharacterEntering || IsCharacterExiting)
+                return;
+
+            JUVehicle lastVehicle = CurrentVehicle;
+
+            IsCharacterEntering = false;
+            CurrentVehicle = null;
+            CurrentVehicleCharacterIK = null;
+            InteractionSystem.BlockInteractions = false;
+            TPSCharacter.enableMove();
+            CancelInvoke(nameof(EndEnterVehicleState));
+
+            OnCancelEnterVehicle?.Invoke(lastVehicle);
+        }
+
+        /// <summary>
+        /// Cancels the process of exiting the current vehicle.
+        /// </summary>
+        public void CancelExitVehicle()
+        {
+            EndEnterVehicleState();
+
+            OnCancelExitVehicle?.Invoke(CurrentVehicle);
+        }
+
         private void UpdateEnteringExitingState()
         {
             TPSCharacter.DisableLocomotion();
@@ -296,23 +323,6 @@ namespace JUTPS.ActionScripts
             InteractionSystem.BlockInteractions = true;
 
             OnStartEnterVehicle?.Invoke(CurrentVehicle);
-        }
-
-        private void CancelEnterVehicle()
-        {
-            if (!IsCharacterEntering || IsCharacterExiting)
-                return;
-
-            JUVehicle vehicleToCancel = CurrentVehicle;
-
-            IsCharacterEntering = false;
-            CurrentVehicle = null;
-            CurrentVehicleCharacterIK = null;
-            InteractionSystem.BlockInteractions = false;
-            TPSCharacter.enableMove();
-            CancelInvoke(nameof(EndEnterVehicleState));
-
-            OnCancelEnterVehicle?.Invoke(vehicleToCancel);
         }
 
         private void EndEnterVehicleState()
@@ -341,9 +351,7 @@ namespace JUTPS.ActionScripts
 
             UpdateDrivingState();
 
-            OnEnterAnyVehicle?.Invoke(CurrentVehicle, TPSCharacter);
-
-            OnEnterVehicle?.Invoke();
+            OnEnterVehicle?.Invoke(CurrentVehicle);
         }
 
         private void StartExitVehicleState()
@@ -361,13 +369,6 @@ namespace JUTPS.ActionScripts
             OnStartExitVehicle?.Invoke(CurrentVehicle);
         }
 
-        private void CancelExitVehicle()
-        {
-            EndEnterVehicleState();
-
-            OnCancelExitVehicle?.Invoke(CurrentVehicle);
-        }
-
         private void EndExitVehicleState()
         {
             if (!IsCharacterExiting || IsCharacterEntering)
@@ -377,7 +378,6 @@ namespace JUTPS.ActionScripts
                 TPSCharacter.PhysicalIgnore(CurrentVehicle.gameObject, ignore: false);
 
             JUVehicle lastVehicle = CurrentVehicle;
-
             IsCharacterExiting = false;
             CurrentVehicle = null;
             CurrentVehicleCharacterIK = null;
@@ -385,8 +385,7 @@ namespace JUTPS.ActionScripts
 
             TPSCharacter.enableMove();
 
-            OnExitVehicle?.Invoke();
-            OnExitAnyVehicle?.Invoke(lastVehicle, TPSCharacter);
+            OnExitVehicle?.Invoke(lastVehicle);
         }
 
         private void OnCharacterStartDriving()

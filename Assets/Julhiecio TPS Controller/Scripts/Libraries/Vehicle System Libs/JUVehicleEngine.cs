@@ -422,6 +422,8 @@ namespace JUTPS.VehicleSystem
 			/// </summary>
 			public float BrakeIncluence;
 
+			public bool InvertForwardRotation;
+
 			/// <summary>
 			/// Returns the <see cref="WheelCollider"/> pose position.
 			/// </summary>
@@ -458,7 +460,7 @@ namespace JUTPS.VehicleSystem
 			/// <param name="brakeIntensity">The brake intensity, a value between 0 and 1 where 0 has not brake on this wheel 
 			/// even if the vehicle is braking and 1 has full brake force when the vehicle is braking.</param>
 			/// <param name="maxSteer">The max wheel steer angle.</param>
-			public WheelData(WheelCollider collider, Transform mesh, bool justRotateWheelXAxis, float throttleIntensity, float brakeIntensity, float maxSteer)
+			public WheelData(WheelCollider collider, Transform mesh, bool justRotateWheelXAxis, float throttleIntensity, float brakeIntensity, float maxSteer, bool invertForwardRotation = false)
 			{
 				WheelCollider = collider;
 				WheelMesh = mesh;
@@ -467,6 +469,8 @@ namespace JUTPS.VehicleSystem
 				ThrottleInfluence = throttleIntensity;
 				MaxSteerAngle = maxSteer;
 				BrakeIncluence = brakeIntensity;
+
+				InvertForwardRotation = invertForwardRotation;
 			}
 
 			/// <summary>
@@ -507,8 +511,14 @@ namespace JUTPS.VehicleSystem
 					return;
 
 				WheelCollider.GetWorldPose(out Vector3 pos, out Quaternion rot);
-				_wheelRotationX += WheelCollider.rpm / 60 * 360 * Time.deltaTime;
-
+				if (InvertForwardRotation)
+				{
+					_wheelRotationX -= WheelCollider.rpm / 60 * 360 * Time.deltaTime;
+                }
+                else
+                {
+					_wheelRotationX += WheelCollider.rpm / 60 * 360 * Time.deltaTime;
+				}
 				if (_wheelRotationX > 360) _wheelRotationX -= 360;
 				if (_wheelRotationX < 0) _wheelRotationX += 360;
 

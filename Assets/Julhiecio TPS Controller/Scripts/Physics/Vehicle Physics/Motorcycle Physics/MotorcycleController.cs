@@ -39,6 +39,7 @@ namespace JUTPS.VehicleSystem
             /// The wheel mesh transform that will follow the <see cref="WheelCollider"/>
             /// </summary>
             public Transform WheelMesh;
+            public bool InvertForwardOrientation;
         }
 
         /// <summary>
@@ -309,8 +310,8 @@ namespace JUTPS.VehicleSystem
             base.UpdateWheelsData();
 
             WheelsData = new WheelData[2];
-            WheelsData[0] = new WheelData(FrontWheel.WheelCollider, FrontWheel.WheelMesh, true, FrontWheel.ThrottleIntensity, FrontWheel.BrakeIntensity, FrontWheel.MaxSteerAngle);
-            WheelsData[1] = new WheelData(BackWheel.WheelCollider, BackWheel.WheelMesh, true, BackWheel.ThrottleIntensity, BackWheel.BrakeIntensity, BackWheel.MaxSteerAngle);
+            WheelsData[0] = new WheelData(FrontWheel.WheelCollider, FrontWheel.WheelMesh, true, FrontWheel.ThrottleIntensity, FrontWheel.BrakeIntensity, FrontWheel.MaxSteerAngle, FrontWheel.InvertForwardOrientation);
+            WheelsData[1] = new WheelData(BackWheel.WheelCollider, BackWheel.WheelMesh, true, BackWheel.ThrottleIntensity, BackWheel.BrakeIntensity, BackWheel.MaxSteerAngle, BackWheel.InvertForwardOrientation);
         }
     }
 

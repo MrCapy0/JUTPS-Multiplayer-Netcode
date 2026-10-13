@@ -88,10 +88,10 @@ namespace JUTPS.FX
 
                     //Set Raycasts
                     RaycastHit LeftGroundHit;
-                    Physics.Raycast(LeftFootOriginalPosition + vehicle.transform.forward * vehicleSpeed / 5 - vehicle.transform.right * 0.2f, -vehicle.transform.up, out LeftGroundHit, 0.8f, GroundLayer);
+                    Physics.Raycast(LeftFootOriginalPosition + vehicle.transform.forward * vehicleSpeed / 5 - vehicle.transform.right * 0.2f, -Vector3.up, out LeftGroundHit, 0.8f, GroundLayer);
 
                     RaycastHit RightGroundHit;
-                    Physics.Raycast(RightFootOriginalPosition + vehicle.transform.forward * vehicleSpeed / 5 + vehicle.transform.right * 0.2f, -vehicle.transform.up, out RightGroundHit, 0.8f, GroundLayer);
+                    Physics.Raycast(RightFootOriginalPosition + vehicle.transform.forward * vehicleSpeed / 5 + vehicle.transform.right * 0.2f, -Vector3.up, out RightGroundHit, 0.8f, GroundLayer);
 
                     //Set ground position
                     Vector3 LeftFootOnGroundPosition = LeftGroundHit.collider ? LeftGroundHit.point + LeftGroundHit.normal * 0.15f : LeftFootOriginalPosition;

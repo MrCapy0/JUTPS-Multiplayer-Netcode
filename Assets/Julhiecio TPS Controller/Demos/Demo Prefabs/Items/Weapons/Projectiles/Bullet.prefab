@@ -192,7 +192,7 @@ MonoBehaviour:
   BulletVelocity: 150
   BulletDamage: 20
   DestroyTime: 0.015
-  HightPrecisionCollisionDetection: 0
+  HightPrecisionCollisionDetection: 1
   ImpactAddForce: 1
   Ricochet: 0
   RicochetAngle: 25

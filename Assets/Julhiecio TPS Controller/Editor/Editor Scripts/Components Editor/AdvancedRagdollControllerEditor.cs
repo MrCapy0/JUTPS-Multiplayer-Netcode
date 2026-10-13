@@ -49,7 +49,7 @@ namespace JUTPS.CustomEditors
             serializedObject.Update();
 
             JUTPSEditor.CustomEditorUtilities.JUTPSTitle("Advanced Ragdoll Controller");
-            if (RagdollController.RagdollBones == null)
+            if (RagdollController.RagdollBones == null || RagdollController.RagdollBones.Length == 0)
             {
                 GUILayout.Label("No Ragdoll Bones found, please create a Ragdoll", JUTPSEditor.CustomEditorStyles.ErrorStyle());
                 RagdollController.StartAdvancedRagdollController();
@@ -82,7 +82,7 @@ namespace JUTPS.CustomEditors
             }
             serializedObject.ApplyModifiedProperties();
 
-            DrawDefaultInspector();
+           // DrawDefaultInspector();
 
         }
     }

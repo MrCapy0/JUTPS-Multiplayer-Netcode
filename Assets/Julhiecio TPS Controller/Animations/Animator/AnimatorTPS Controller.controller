@@ -2133,9 +2133,9 @@ AnimatorStateTransition:
   m_Mute: 0
   m_IsExit: 0
   serializedVersion: 3
-  m_TransitionDuration: 0.24999994
+  m_TransitionDuration: 0.07804239
   m_TransitionOffset: 0
-  m_ExitTime: 0.04844951
+  m_ExitTime: 0.048449505
   m_HasExitTime: 0
   m_HasFixedDuration: 1
   m_InterruptionSource: 0
@@ -3507,7 +3507,7 @@ AnimatorStateTransition:
   m_Mute: 0
   m_IsExit: 0
   serializedVersion: 3
-  m_TransitionDuration: 0.25000006
+  m_TransitionDuration: 0.054232836
   m_TransitionOffset: 0
   m_ExitTime: 0.13080597
   m_HasExitTime: 0
@@ -8467,7 +8467,7 @@ AnimatorStateTransition:
   m_Mute: 0
   m_IsExit: 0
   serializedVersion: 3
-  m_TransitionDuration: 0.25
+  m_TransitionDuration: 0.0392859
   m_TransitionOffset: 0
   m_ExitTime: 0.78365386
   m_HasExitTime: 0
@@ -12384,7 +12384,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 92272e0666b973a48b3e0a7ae9fd1133, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  StartUsing: 0.307
+  StartUsing: 0.151
   StopUsing: 0.729
   UsingMeleeWeapon: 0
 --- !u!1102 &2550514279915718948
@@ -15423,9 +15423,9 @@ AnimatorStateTransition:
   m_Mute: 0
   m_IsExit: 0
   serializedVersion: 3
-  m_TransitionDuration: 0.25
+  m_TransitionDuration: 0.07857132
   m_TransitionOffset: 0
-  m_ExitTime: 0.8913044
+  m_ExitTime: 0.89130443
   m_HasExitTime: 0
   m_HasFixedDuration: 1
   m_InterruptionSource: 0
@@ -15810,7 +15810,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 92272e0666b973a48b3e0a7ae9fd1133, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  StartUsing: 0.427
+  StartUsing: 0.056
   StopUsing: 0.921
   UsingMeleeWeapon: 0
 --- !u!1101 &6464068645056188617

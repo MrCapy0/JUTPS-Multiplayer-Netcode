@@ -15,6 +15,8 @@ namespace JUTPS.VehicleSystem
         [JUHeader("Idle Motor Audio Settings")]
         public AudioSource MotorLoopAudioSource;
         public AudioClip MotorLoopAudioClip;
+        public AudioSource RevAudioSource;
+        public AudioClip RevAudioClip;
         [Range(0, 1)]
         public float IdleVolume = 0.7f;
         [Range(0, 1)]
@@ -42,6 +44,8 @@ namespace JUTPS.VehicleSystem
         private JUVehicle vehicle;
         private bool startedMotor;
         private bool motorOff;
+
+        private bool playedRev;
         void Start()
         {
             vehicle = GetComponent<JUVehicle>();
@@ -71,6 +75,20 @@ namespace JUTPS.VehicleSystem
                 pitch = Mathf.Clamp(pitch, MinPitch, MaxPitch);
                 MotorLoopAudioSource.pitch = Mathf.Lerp(MotorLoopAudioSource.pitch, pitch, (accelerating ? AccelerateSpeed : DecelerateSpeed) * Time.deltaTime);
                 MotorLoopAudioSource.volume = Mathf.Lerp(MotorLoopAudioSource.volume, volume, (accelerating ? AccelerateSpeed : DecelerateSpeed) * Time.deltaTime);
+
+                //Rev Sound
+                if(vehicle.FinalVertical > 0.5f)
+                {
+                    if (playedRev == false)
+                    {
+                        Rev();
+                        playedRev = true;
+                    }
+                }
+                else
+                {
+                    playedRev = false;
+                }
             }
             else
             {
@@ -119,6 +137,15 @@ namespace JUTPS.VehicleSystem
             startedMotor = false;
 
             motorOff = true;
+        }
+
+        public void Rev()
+        {
+            RevAudioSource.PlayOneShot(RevAudioClip);
+            RevAudioSource.pitch = Random.Range(0.8f, 1.2f);
+            MotorLoopAudioSource.pitch += 0.5f;
+            MotorLoopAudioSource.volume += 0.5f;
+
         }
     }
 }

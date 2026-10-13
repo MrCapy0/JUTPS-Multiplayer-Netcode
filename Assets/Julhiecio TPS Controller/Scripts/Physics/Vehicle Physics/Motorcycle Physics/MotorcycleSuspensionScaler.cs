@@ -6,7 +6,6 @@ using JUTPSEditor.JUHeader;
 namespace JUTPS.VehicleSystem
 {
 
-    [ExecuteInEditMode]
     [AddComponentMenu("JU TPS/Vehicle System/Motorcycle Suspension")]
     public class MotorcycleSuspensionScaler : MonoBehaviour
     {
@@ -33,7 +32,7 @@ namespace JUTPS.VehicleSystem
         public bool MoveSuspension;
         public float SuspensionOfsset;
         public float Lenght;
-
+        public bool InvertForward;
         //public bool ReplaceZPosition;
         //public WheelCollider WheelToReplaceZPosition;
         // public Transform TransformToGetZPosition;
@@ -74,11 +73,22 @@ namespace JUTPS.VehicleSystem
 
                     if (MoveSuspension)
                     {
+                        // Adjust Wheel Suspension Direction
                         WheelTarget.transform.position = pos - HandleBarForwardDirection.forward * (dist * Lenght) + HandleBarForwardDirection.forward * Offset;
-                        transform.position = WheelTarget.transform.position + transform.forward * SuspensionOfsset;
+
+                        // Adjust Suspension Position Based on WheelTarget Position
+                        if (InvertForward)
+                        {
+                            transform.position = WheelTarget.transform.position + transform.forward * SuspensionOfsset;
+                        }
+                        else
+                        {
+                            transform.position = WheelTarget.transform.position + transform.forward * SuspensionOfsset;
+                        }
                     }
                     else
                     {
+                        // Only Adjust Wheel Suspension Direction
                         WheelTarget.transform.position = pos - HandleBarForwardDirection.forward * Offset * transform.localScale.z + HandleBarForwardDirection.forward * Offset;
                     }
                 }

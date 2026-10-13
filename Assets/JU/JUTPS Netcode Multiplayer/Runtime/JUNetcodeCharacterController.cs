@@ -409,7 +409,7 @@ namespace JU.TPS.Netcode
 
             CharacterController.ControllerInputs(
                 moveAxis: _netMoveAxis.Value,
-                ShotInput: shotInputPressed,
+                shotInput: shotInputPressed,
                 shotInputDown: shotInputTriggered,
                 meleeAttackInput: meleeAttackTriggered,
                 punchInputDown: punchAttackTriggered,
@@ -453,7 +453,7 @@ namespace JU.TPS.Netcode
 
             if (CharacterController.IsWeaponSwitching == false)
             {
-                if ((_netRightHandItem.Value != CharacterController.CurrentItemIDRightHand) ||
+                if ((_netRightHandItem.Value != CharacterController.Inventory.CurrentRightHandItemID) ||
                     (_netRightHandItem.Value > 0 && CharacterController.HoldableItemInUseRightHand == null))
                 {
                     CharacterController.SwitchToItem(_netRightHandItem.Value);

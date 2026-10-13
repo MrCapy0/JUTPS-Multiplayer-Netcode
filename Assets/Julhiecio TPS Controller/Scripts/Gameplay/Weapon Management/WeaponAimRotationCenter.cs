@@ -17,6 +17,11 @@ namespace JUTPS.WeaponSystem
         public List<Vector3> _storedLocalPositions = new List<Vector3>();
         public List<Quaternion> _storedLocalRotations = new List<Quaternion>();
 
+        //[Header("Clamp Rotation")]
+        public bool LimitLocalRotations = true;
+        public Vector3 MinAngles = new Vector3(-75, -20, -20);
+        public Vector3 MaxAngles = new Vector3(75, 20, 20);
+
         public void CreateWeaponPositionReference(string name)
         {
             //Add name
@@ -77,16 +82,6 @@ namespace JUTPS.WeaponSystem
                     _storedLocalRotations.Add(w.localRotation);
                 }
             }
-
-            /*
-            for (int i = 0; i < WeaponPositionTransform.Count; i++)
-            {
-                if (WeaponPositionTransform[i] == null) return;
-
-                _storedLocalPositions[i] = WeaponPositionTransform[i].localPosition;
-                _storedLocalRotations[i] = WeaponPositionTransform[i].localRotation;
-            }
-            */
         }
         public void UpdateSwitchID()
         {
@@ -96,11 +91,27 @@ namespace JUTPS.WeaponSystem
                 WeaponPositionTransform[i].name = WeaponPositionName[i];
             }
         }
+
+        private void LateUpdate()
+        {
+            if (!LimitLocalRotations) return;
+
+            ClampRotation(MinAngles, MaxAngles);
+        }
+
         private void Start()
         {
             StoreLocalTransform();
         }
+        public void ClampRotation(Vector3 minAngles, Vector3 maxAngles)
+        {
+            Vector3 angles = transform.localEulerAngles;
+
+            angles.x = Mathf.Clamp(Mathf.DeltaAngle(0, angles.x), minAngles.x, maxAngles.x);
+            angles.y = Mathf.Clamp(Mathf.DeltaAngle(0, angles.y), minAngles.y, maxAngles.y);
+            angles.z = Mathf.Clamp(Mathf.DeltaAngle(0, angles.z), minAngles.z, maxAngles.z);
+
+            transform.localEulerAngles = angles;
+        }
     }
-
-
 }

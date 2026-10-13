@@ -137,7 +137,7 @@ namespace JUTPS
             }
 
             // Get Input Values
-            bool ShotInput = Inputs.IsShotPressed;
+            bool shotInput = Inputs.IsShotPressed;
             bool shotInputDown = Inputs.IsShotTriggered;
             bool meleeAttackInput = Inputs.IsMeleeWeaponAttackTriggered;
             bool punchInputDown = Inputs.IsPunchTriggered;
@@ -172,7 +172,7 @@ namespace JUTPS
             if (Inputs.IsEquipSlot7Triggered) SwitchToItemInSequentialSlot(InventorySystem.JUInventory.SequentialSlotsEnum.seventh);
             if (Inputs.IsEquipSlot8Triggered) SwitchToItemInSequentialSlot(InventorySystem.JUInventory.SequentialSlotsEnum.eighth);
             if (Inputs.IsEquipSlot9Triggered) SwitchToItemInSequentialSlot(InventorySystem.JUInventory.SequentialSlotsEnum.ninth);
-            if (Inputs.IsEquipSlot10Triggered) SwitchToItemInSequentialSlot(InventorySystem.JUInventory.SequentialSlotsEnum.third);
+            if (Inputs.IsEquipSlot10Triggered) SwitchToItemInSequentialSlot(InventorySystem.JUInventory.SequentialSlotsEnum.tenth);
 
             if (EnableProne == false)
             {
@@ -187,7 +187,7 @@ namespace JUTPS
 
             ControllerInputs(
                 moveAxis: moveAxis,
-                ShotInput: ShotInput,
+                shotInput: shotInput,
                 shotInputDown: shotInputDown,
                 meleeAttackInput: meleeAttackInput,
                 punchInputDown: punchInputDown,
@@ -269,11 +269,11 @@ namespace JUTPS
             }
         }
 
-        public virtual void ControllerInputs(Vector2 moveAxis, bool ShotInput, bool shotInputDown, bool meleeAttackInput, bool punchInputDown, bool reloadTriggered, bool aimInput, bool aimInputDown, bool isRunPressed, bool isRunPerformed, bool isRollTriggered, bool isJumpTriggered)
+        public virtual void ControllerInputs(Vector2 moveAxis, bool shotInput, bool shotInputDown, bool meleeAttackInput, bool punchInputDown, bool reloadTriggered, bool aimInput, bool aimInputDown, bool isRunPressed, bool isRunPerformed, bool isRollTriggered, bool isJumpTriggered)
         {
             if (EnableShot == false)
             {
-                ShotInput = false;
+                shotInput = false;
                 shotInputDown = false;
             }
 
@@ -306,7 +306,7 @@ namespace JUTPS
             VerticalY = moveAxis.y;
 
             // Firing Mode timer
-            FireModeTimer(ShotInput, aimInput);
+            FireModeTimer(shotInput, aimInput);
 
             // Prone Get Up
             if (MaxWalkableAngle > 0 && (GroundAngle > MaxWalkableAngle / 1.5f && IsProne))
@@ -390,14 +390,14 @@ namespace JUTPS
             //All Items Using. Tags: Weapon, Melee, Gun, Shot, Reload, Aim
             if (Inventory != null)
             {
-                DefaultUseOfAllItems(ShotInput, meleeAttackInput, shotInputDown, Inventory.IsPickingItem ? false : reloadTriggered, aimInput, aimInputDown, punchInputDown);
+                DefaultUseOfAllItems(shotInput, meleeAttackInput, shotInputDown, Inventory.IsPickingItem ? false : reloadTriggered, aimInput, aimInputDown, punchInputDown);
             }
             else
             {
-                DefaultUseOfAllItems(ShotInput, meleeAttackInput, shotInputDown, reloadTriggered, aimInput, aimInputDown, punchInputDown);
+                DefaultUseOfAllItems(shotInput, meleeAttackInput, shotInputDown, reloadTriggered, aimInput, aimInputDown, punchInputDown);
             }
             // >>> Firing Mode Trigger
-            if ((ShotInput || aimInput) && FiringMode == false && IsRolling == false && IsDriving == false && IsReloading == false && LocomotionMode != MovementMode.JuTpsClassic)
+            if ((shotInput || aimInput) && FiringMode == false && IsRolling == false && IsDriving == false && IsReloading == false && LocomotionMode != MovementMode.JuTpsClassic)
             {
                 if ((BlockFireModeOnPunching && IsPunching) == false)
                 {
@@ -996,7 +996,7 @@ namespace JUTPS
 
             if (IsAiming)
             {
-                PivotItemRotation.transform.parent = null;
+                //PivotItemRotation.transform.parent = null;
                 PivotItemRotation.transform.rotation = Quaternion.Euler(CamEuler);
             }
             else

@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using JUTPS;
+using JUTPS.VehicleSystem;
 
 [DisallowMultipleComponent]
 public class JURagdollImpactDetector : MonoBehaviour
@@ -42,7 +43,7 @@ public class JURagdollImpactDetector : MonoBehaviour
         character.DriveVehicles.OnExitVehicle.RemoveListener(OnExitVehicle);
     }
 
-    void OnEnterVehicle()
+    void OnEnterVehicle(JUVehicle vehicle)
     {
         isTemporarilyDisabled = true;
         reEnableTimer = reEnableDelay;
@@ -50,7 +51,7 @@ public class JURagdollImpactDetector : MonoBehaviour
         CacheVehicleRb();
     }
 
-    void OnExitVehicle()
+    void OnExitVehicle(JUVehicle vehicle)
     {
         vehicleRb = null;
         lastVelocity = Vector3.zero;

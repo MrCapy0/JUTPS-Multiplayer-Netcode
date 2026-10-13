@@ -144,12 +144,12 @@ namespace JU.SaveLoad
             StartCoroutine(LoadAfterGameSetup());
         }
 
-        private void OnEnterVehicle()
+        private void OnEnterVehicle(JUVehicle vehicle)
         {
-            _currentVehicleName = _driveVehicles.CurrentVehicle.name;
+            _currentVehicleName = vehicle.name;
         }
 
-        private void OnExitVehicle()
+        private void OnExitVehicle(JUVehicle vehicle)
         {
             _currentVehicleName = null;
         }

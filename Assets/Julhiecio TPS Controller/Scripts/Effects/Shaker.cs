@@ -38,7 +38,10 @@ namespace JUTPS.FX
 
 
 
-
+        private void Awake()
+        {
+            currentCameraInstance = null;
+        }
         void Start()
         {
             CoordX = Random.Range(-1000, 1000);
@@ -106,6 +109,8 @@ namespace JUTPS.FX
         {
             if (currentCameraInstance == null)
             {
+                //Debug.LogWarning("Camera Instance no found");
+
                 if (Camera.current != null)
                 {
                     currentCameraInstance = Camera.current.GetComponent<Shaker>();
@@ -114,12 +119,15 @@ namespace JUTPS.FX
                 else
                 {
                     return FindObjectOfType<Shaker>(true);
-                    //Debug.LogWarning("Camera Current no found");
+                    //Debug.LogWarning("Shaker no found");
                     //return null;
                 }
             }
             else
             {
+                return currentCameraInstance;
+
+                /*
                 if (Camera.current != null && Camera.current != currentCameraInstance.GetComponent<Camera>())
                 {
                     currentCameraInstance = Camera.current.GetComponent<Shaker>();
@@ -128,7 +136,7 @@ namespace JUTPS.FX
                 else
                 {
                     return currentCameraInstance;
-                }
+                }*/
             }
         }
 

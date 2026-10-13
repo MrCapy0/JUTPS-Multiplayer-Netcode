@@ -71,6 +71,7 @@ namespace JUTPS.FX
             if (wheelCollider == null || skidmarkPrefab == null || rb == null || vehicle == null) return;
 
             wheelCollider.GetGroundHit(out WheelHit hit);
+            //Physics.Raycast(transform.position, -transform.up, out RaycastHit hit, wheelCollider.radius + wheelCollider.suspensionDistance);
 
             // Calculate wheel velocity
             Vector3 wheelVelocity = (hit.point - transform.position) / Time.deltaTime;

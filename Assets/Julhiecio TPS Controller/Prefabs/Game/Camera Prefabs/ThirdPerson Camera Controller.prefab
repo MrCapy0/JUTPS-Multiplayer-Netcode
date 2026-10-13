@@ -266,7 +266,7 @@ MonoBehaviour:
     SettingsIDName: Normal Camera State
   FireModeCameraState:
     StateName: Fire Mode Camera State
-    Distance: 3
+    Distance: 2
     MovementSpeed: 50
     CameraFieldOfView: 60
     UpTargetOffset: 0
@@ -323,7 +323,7 @@ MonoBehaviour:
     SettingsIDName: Driving Vehicle Camera State
   DeadPlayerCameraState:
     StateName: Dead Player Camera State
-    Distance: 6
+    Distance: 4
     MovementSpeed: 5
     CameraFieldOfView: 40
     UpTargetOffset: 0

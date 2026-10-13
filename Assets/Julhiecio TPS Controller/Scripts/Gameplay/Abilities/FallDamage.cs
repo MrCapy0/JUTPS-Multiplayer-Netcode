@@ -67,7 +67,7 @@ namespace JUTPS.ActionScripts
                     //Damage
                     if (FallDamageIntensity > HeightToGetDamage)
                     {
-                        TPSCharacter.TakeDamage(FallDamageIntensity / 4 * Damage);
+                        TPSCharacter.TakeDamage(FallDamageIntensity/4 * Damage);
                     }
                     FallDamageIntensity = 0;
                     Landed();

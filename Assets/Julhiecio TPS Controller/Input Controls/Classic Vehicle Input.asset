@@ -142,5 +142,13 @@ MonoBehaviour:
     m_Id: e32ae476-db11-40b9-81f0-ce17729ac9ff
     m_Processors: 
     m_Interactions: 
-    m_SingletonActionBindings: []
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: b25eab24-4511-4292-a936-782eff5b416a
+      m_Path: <Keyboard>/shift
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Nitro
+      m_Flags: 0
     m_Flags: 0
