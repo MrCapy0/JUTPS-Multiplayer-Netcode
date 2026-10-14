@@ -254,6 +254,9 @@ namespace JU.TPS.Netcode
                 {
                     interactionSystem.UseDefaultInputs = false;
                 }
+
+                // The client started ragdoll but the server needs to be notified.
+                CharacterController.OnStartRagdollCollision += OnRagdollStartedRpc;
             }
         }
 
@@ -625,6 +628,16 @@ namespace JU.TPS.Netcode
             if (IsOwner)
             {
                 _netCurrentVehicle.Value = new();
+            }
+        }
+
+        [Rpc(SendTo.Owner)]
+        private void OnRagdollStartedRpc()
+        {
+            if (IsOwner == true)
+            {
+                CharacterController.Ragdoller.State = AdvancedRagdollController.RagdollState.Ragdolled;
+                _netRagdollState.Value = AdvancedRagdollController.RagdollState.Ragdolled;
             }
         }
 

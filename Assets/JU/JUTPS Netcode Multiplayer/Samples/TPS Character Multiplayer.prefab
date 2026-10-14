@@ -90,11 +90,11 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 237078857134818959, guid: 5d1a776477408be4294d1082585c2df4,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 6383427618178508643}
+      addedObject: {fileID: 5631327316687335835}
     - targetCorrespondingSourceObject: {fileID: 237078857134818959, guid: 5d1a776477408be4294d1082585c2df4,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 4654068647584006989}
+      addedObject: {fileID: 1956273440910011734}
   m_SourcePrefab: {fileID: 100100000, guid: 5d1a776477408be4294d1082585c2df4, type: 3}
 --- !u!1 &1967557329666322476 stripped
 GameObject:
@@ -114,7 +114,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2868853293
+  GlobalObjectIdHash: 3858501592
   InScenePlacedSourceGlobalObjectIdHash: 0
   m_InScenePlacedDisabledByDefault: 0
   DeferredDespawnTick: 0
@@ -228,7 +228,7 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 2873761356180410092}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &6383427618178508643
+--- !u!114 &5631327316687335835
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -258,12 +258,12 @@ MonoBehaviour:
   SyncPositionX: 1
   SyncPositionY: 1
   SyncPositionZ: 1
-  SyncRotAngleX: 0
-  SyncRotAngleY: 0
-  SyncRotAngleZ: 0
-  SyncScaleX: 0
-  SyncScaleY: 0
-  SyncScaleZ: 0
+  SyncRotAngleX: 1
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 1
+  SyncScaleX: 1
+  SyncScaleY: 1
+  SyncScaleZ: 1
   PositionThreshold: 0.001
   RotAngleThreshold: 0.01
   ScaleThreshold: 0.01
@@ -274,7 +274,7 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 0
---- !u!114 &4654068647584006989
+--- !u!114 &1956273440910011734
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

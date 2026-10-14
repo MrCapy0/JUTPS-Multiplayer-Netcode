@@ -5,6 +5,7 @@ using JUTPS.JUInputSystem;
 using JUTPS.PhysicsScripts;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace JUTPS
 {
@@ -45,6 +46,8 @@ namespace JUTPS
         public float LeftElbowAdjustWeight = 0f;
         public float LookAtBodyWeight = 0.5f;
         public float HeadIKBodyWeight = 1;
+
+        public UnityAction OnStartRagdollCollision;
 
         public JUCharacterController() : base()
         {
@@ -1119,9 +1122,12 @@ namespace JUTPS
                 // Do ragdoll
                 if (Ragdoller)
                 {
-                    if (physicalDamage > RagdollStartAtDamage) Ragdoller.State = AdvancedRagdollController.RagdollState.Ragdolled;
+                    if (physicalDamage > RagdollStartAtDamage)
+                    {
+                        Ragdoller.State = AdvancedRagdollController.RagdollState.Ragdolled;
+                        OnStartRagdollCollision?.Invoke();
+                    }
                 }
-
             }
         }
 

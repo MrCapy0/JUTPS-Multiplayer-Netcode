@@ -14,6 +14,9 @@ namespace JU.TPS.Netcode
         private IHealth _health;
         private IHealth.DamageResultInfo _lastDamageResultInfo;
 
+        /// <summary>
+        /// Gets the <see cref="IHealth"/> component attached to this GameObject.
+        /// </summary>
         public IHealth Health
         {
             get
