@@ -20,7 +20,7 @@ namespace JU.TPS.Netcode
     public class JUNetcodeCharacterController : NetworkBehaviour
     {
         [System.Flags]
-        private enum Flags
+        private enum Flags : ushort
         {
             // States.
             IsRunning = 1 << 0,
@@ -39,7 +39,7 @@ namespace JU.TPS.Netcode
         }
 
         [System.Flags]
-        private enum TriggeredInputFlags
+        private enum TriggeredInputFlags : byte
         {
             MeleeAttackTriggered = 1 << 0,
             PunchAttackTriggered = 1 << 1,
@@ -58,9 +58,9 @@ namespace JU.TPS.Netcode
         private NetworkTransform _hipsNetworkTransform;
 
         private NetworkVariable<Vector2> _netMoveAxis = new NetworkVariable<Vector2>(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<Vector3> _netLookPosition = new NetworkVariable<Vector3>(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private NetworkVariable<Vector3> _netLookPosition = new NetworkVariable<Vector3>(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         private NetworkVariable<Flags> _netStateFlags = new NetworkVariable<Flags>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<int> _netRightHandItem = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private NetworkVariable<byte> _netRightHandItem = new NetworkVariable<byte>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         private NetworkVariable<AdvancedRagdollController.RagdollState> _netRagdollState = new NetworkVariable<AdvancedRagdollController.RagdollState>(AdvancedRagdollController.RagdollState.Animated, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         private NetworkVariable<NetworkObjectReference> _netCurrentVehicle = new NetworkVariable<NetworkObjectReference>(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
@@ -315,8 +315,7 @@ namespace JU.TPS.Netcode
                 moveDirection.y = moveDirection3D.z;
             }
 
-            _netRightHandItem.Value = CharacterController.Inventory.CurrentRightHandItemID;
-
+            _netRightHandItem.Value = (byte)CharacterController.Inventory.CurrentRightHandItemID;
             _netMoveAxis.Value = moveDirection;
 
             Flags flags = 0;
