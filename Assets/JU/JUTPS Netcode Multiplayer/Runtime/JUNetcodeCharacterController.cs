@@ -63,6 +63,7 @@ namespace JU.TPS.Netcode
         private NetworkVariable<byte> _netRightHandItem = new NetworkVariable<byte>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         private NetworkVariable<AdvancedRagdollController.RagdollState> _netRagdollState = new NetworkVariable<AdvancedRagdollController.RagdollState>(AdvancedRagdollController.RagdollState.Animated, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         private NetworkVariable<NetworkObjectReference> _netCurrentVehicle = new NetworkVariable<NetworkObjectReference>(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private NetworkVariable<bool> _netIsDriving = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
         private Flags _clientLastFlags;
         private TriggeredInputFlags _clientLastTriggeredInputFlags;
@@ -235,12 +236,6 @@ namespace JU.TPS.Netcode
                         TPSCameraController cameraController = Instantiate(CameraControllerPrefab);
                         CharacterController.MyPivotCamera = cameraController;
                     }
-
-                    if (_driveAbility != null && _driveAbility.IsDriving)
-                    {
-                        NetworkObject currentVehicleNetworkObject = GetNetworkObject(_driveAbility.CurrentVehicle);
-                        DriveVehicle(currentVehicleNetworkObject, true);
-                    }
                 }
             }
             else
@@ -334,12 +329,13 @@ namespace JU.TPS.Netcode
             if (aimInputPressed) flags |= Flags.AimInputPressed;
 
             // Trigger input RPCs.
-            if (meleeAttackTriggered) TriggerMeleeInputRpc();
-            if (punchInputTriggered) TriggerPunchInputRpc();
-            if (isRollTriggered) TriggerRollInputRpc();
-            if (reloadTriggered) TriggerReloadInputRpc();
+            if (meleeAttackTriggered) ClientTriggerMeleeInputRpc();
+            if (punchInputTriggered) ClientTriggerPunchInputRpc();
+            if (isRollTriggered) ClientTriggerRollInputRpc();
+            if (reloadTriggered) ClientTriggerReloadInputRpc();
 
             _netStateFlags.Value = flags;
+            _netIsDriving.Value = CharacterController.IsDriving;
 
             Vector3 lookAtPosition = CharacterController.GetLookPosition();
             if (_enableWeaponSwitchingTime > 0.3f && CharacterController.RightHandWeapon != null && CharacterController.FiringModeIK && CharacterController.RightHandWeapon.CameraRaycastHit.point != Vector3.zero)
@@ -469,41 +465,53 @@ namespace JU.TPS.Netcode
                     }
                 }
             }
+
+            // Avoid syncronization mistakes.
+            if (_driveAbility != null && _driveAbility.CurrentVehicle == null && _netCurrentVehicle.Value.TryGet(out NetworkObject currentVehicleNetworkObject))
+            {
+                DriveVehicle(currentVehicleNetworkObject, true);
+            }
         }
 
-        private void DriveVehicle(NetworkObjectReference vehicleRef, bool immediately)
+        private void DriveVehicle(NetworkObject netVehicle, bool immediately)
         {
             if (_driveAbility == null)
             {
                 return;
             }
 
-            if (vehicleRef.TryGet(out NetworkObject vehicleNetworkObject))
+            JUVehicle vehicle = netVehicle.GetComponent<JUVehicle>();
+            _driveAbility.DriveVehicle(vehicle, vehicle.GetComponent<JUVehicleCharacterIK>(), immediately);
+            NetworkTransform.enabled = false;
+
+            if (IsOwner)
             {
-                JUVehicle vehicle = vehicleNetworkObject.GetComponent<JUVehicle>();
-                _driveAbility.DriveVehicle(vehicle, vehicle.GetComponent<JUVehicleCharacterIK>(), immediately);
-                NetworkTransform.enabled = false;
+                _vehicleOriginalOwnerId = netVehicle.OwnerClientId;
+                _netCurrentVehicle.Value = netVehicle;
+                JUNetcodeVehicle netcodeVehicle = GetNetcodeVehicle(netVehicle);
 
-                if (IsOwner)
-                {
-                    _vehicleOriginalOwnerId = vehicleNetworkObject.OwnerClientId;
-                    JUNetcodeVehicle netcodeVehicle = GetNetcodeVehicle(vehicleNetworkObject);
-
-                    netcodeVehicle.SetOwnership(OwnerClientId);
-                }
+                netcodeVehicle.SetOwnership(OwnerClientId);
             }
         }
 
         private void OnStartEnterVehicle(JUVehicle vehicle)
         {
-            if (vehicle.TryGetComponent(out NetworkObject vehicleNetworkObject))
-            {
-                OnStartEnterVehicleRpc(vehicleNetworkObject);
-            }
-            else
+            if (vehicle.TryGetComponent(out NetworkObject vehicleNetworkObject) == false)
             {
                 Debug.LogError($"Vehicle {vehicle} does not have a NetworkObject component.");
+                return;
             }
+
+            if (IsOwner)
+            {
+                JUNetcodeVehicle netcodeVehicle = GetNetcodeVehicle(vehicleNetworkObject);
+
+                _netCurrentVehicle.Value = vehicleNetworkObject;
+                _vehicleOriginalOwnerId = vehicleNetworkObject.OwnerClientId;
+                netcodeVehicle.SetOwnership(OwnerClientId);
+            }
+
+            ClientDriveVehicleRpc(vehicleNetworkObject);
         }
 
         private void OnCancelEnterVehicle(JUVehicle vehicle)
@@ -511,14 +519,13 @@ namespace JU.TPS.Netcode
             OnCancelEnterVehicleRpc();
         }
 
-
         private void OnStartExitVehicle(JUVehicle vehicle)
         {
             OnStartExitVehicleRpc();
         }
 
         [Rpc(SendTo.NotMe)]
-        private void TriggerMeleeInputRpc()
+        private void ClientTriggerMeleeInputRpc()
         {
             if (IsOwner == true)
             {
@@ -529,7 +536,7 @@ namespace JU.TPS.Netcode
         }
 
         [Rpc(SendTo.NotMe)]
-        private void TriggerPunchInputRpc()
+        private void ClientTriggerPunchInputRpc()
         {
             if (IsOwner == true)
             {
@@ -540,7 +547,7 @@ namespace JU.TPS.Netcode
         }
 
         [Rpc(SendTo.NotMe)]
-        private void TriggerRollInputRpc()
+        private void ClientTriggerRollInputRpc()
         {
             if (IsOwner == true)
             {
@@ -551,7 +558,7 @@ namespace JU.TPS.Netcode
         }
 
         [Rpc(SendTo.NotMe)]
-        private void TriggerReloadInputRpc()
+        private void ClientTriggerReloadInputRpc()
         {
             if (IsOwner == true)
             {
@@ -562,33 +569,15 @@ namespace JU.TPS.Netcode
         }
 
         [Rpc(SendTo.NotMe)]
-        private void OnStartEnterVehicleRpc(NetworkObjectReference vehicleRef)
+        private void ClientDriveVehicleRpc(NetworkObjectReference vehicleRef)
         {
             if (_driveAbility == null)
             {
                 return;
             }
 
-            if (IsOwner)
-            {
-                vehicleRef.TryGet(out NetworkObject vehicleNetworkObject);
-                JUNetcodeVehicle netcodeVehicle = vehicleNetworkObject.GetComponent<JUNetcodeVehicle>();
-                if (netcodeVehicle == null)
-                {
-                    Debug.LogError($"Vehicle {vehicleNetworkObject.name} does not have a {nameof(JUNetcodeVehicle)} component.");
-                    return;
-                }
-
-                _vehicleOriginalOwnerId = vehicleNetworkObject.OwnerClientId;
-                netcodeVehicle.SetOwnership(OwnerClientId);
-
-                _netCurrentVehicle.Value = vehicleRef;
-                return;
-            }
-
             DriveVehicle(vehicleRef, false);
         }
-
 
         [Rpc(SendTo.NotMe)]
         private void OnStartExitVehicleRpc()
