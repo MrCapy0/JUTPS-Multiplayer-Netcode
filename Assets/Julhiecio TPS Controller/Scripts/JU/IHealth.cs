@@ -142,6 +142,11 @@ namespace JU
         public event UnityAction OnResetHealth;
 
         /// <summary>
+        /// Time in seconds to block damage spam.
+        /// </summary>
+        public float SpamHitTime { get; set; }
+
+        /// <summary>
         /// Damage reduction amount.
         /// </summary>
         public float Protection { get; set; }

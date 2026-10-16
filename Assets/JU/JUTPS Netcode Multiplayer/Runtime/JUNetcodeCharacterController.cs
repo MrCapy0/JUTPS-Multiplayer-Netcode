@@ -56,6 +56,7 @@ namespace JU.TPS.Netcode
         private NetworkTransform _networkTransform;
         private NetworkRigidbody _networkRigidbody;
         private NetworkTransform _hipsNetworkTransform;
+        private NetworkRigidbody _hipsNetworkRigidbody;
 
         private NetworkVariable<Vector2> _netMoveAxis = new NetworkVariable<Vector2>(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         private NetworkVariable<Vector3> _netLookPosition = new NetworkVariable<Vector3>(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -139,6 +140,22 @@ namespace JU.TPS.Netcode
             }
         }
 
+        /// <summary>
+        /// Gets the <see cref="NetworkRigidbody"/> component attached to the character's hips.
+        /// </summary>
+        public NetworkRigidbody HipsNetworkRigidbody
+        {
+            get
+            {
+                if (_hipsNetworkRigidbody == null && HipsNetworkTransform != null)
+                {
+                    _hipsNetworkRigidbody = HipsNetworkTransform.GetComponent<NetworkRigidbody>();
+                }
+
+                return _hipsNetworkRigidbody;
+            }
+        }
+
         private void Reset()
         {
             if (Application.isPlaying == false)
@@ -165,29 +182,32 @@ namespace JU.TPS.Netcode
                     _networkRigidbody = gameObject.AddComponent<NetworkRigidbody>();
                 }
 
-                Transform characterHips = CharacterController.anim.GetBoneTransform(HumanBodyBones.Hips);
-                if (characterHips != null)
+                if (CharacterController.Ragdoller != null)
                 {
-                    // Child NetworkBehaviours use the root NetworkObject; a nested one would not be spawnable.
-                    NetworkTransform hipsNetworkTransform = characterHips.gameObject.GetComponent<NetworkTransform>();
-                    if (hipsNetworkTransform == null)
+                    Transform characterHips = CharacterController.anim.GetBoneTransform(HumanBodyBones.Hips);
+                    if (characterHips != null)
                     {
-                        hipsNetworkTransform = characterHips.gameObject.AddComponent<NetworkTransform>();
-                    }
+                        // Child NetworkBehaviours use the root NetworkObject; a nested one would not be spawnable.
+                        NetworkTransform hipsNetworkTransform = characterHips.gameObject.GetComponent<NetworkTransform>();
+                        if (hipsNetworkTransform == null)
+                        {
+                            hipsNetworkTransform = characterHips.gameObject.AddComponent<NetworkTransform>();
+                        }
 
-                    NetworkRigidbody hipsNetworkRigidbody = characterHips.gameObject.GetComponent<NetworkRigidbody>();
-                    if (hipsNetworkRigidbody == null)
-                    {
-                        hipsNetworkRigidbody = characterHips.gameObject.AddComponent<NetworkRigidbody>();
-                    }
+                        NetworkRigidbody hipsNetworkRigidbody = characterHips.gameObject.GetComponent<NetworkRigidbody>();
+                        if (hipsNetworkRigidbody == null)
+                        {
+                            hipsNetworkRigidbody = characterHips.gameObject.AddComponent<NetworkRigidbody>();
+                        }
 
-                    hipsNetworkTransform.AuthorityMode = NetworkTransform.AuthorityModes.Owner;
-                    hipsNetworkTransform.SyncRotAngleX = false;
-                    hipsNetworkTransform.SyncRotAngleY = true;
-                    hipsNetworkTransform.SyncRotAngleZ = false;
-                    hipsNetworkTransform.SyncScaleX = false;
-                    hipsNetworkTransform.SyncScaleY = false;
-                    hipsNetworkTransform.SyncScaleZ = false;
+                        hipsNetworkTransform.AuthorityMode = NetworkTransform.AuthorityModes.Owner;
+                        hipsNetworkTransform.SyncRotAngleX = true;
+                        hipsNetworkTransform.SyncRotAngleY = true;
+                        hipsNetworkTransform.SyncRotAngleZ = true;
+                        hipsNetworkTransform.SyncScaleX = false;
+                        hipsNetworkTransform.SyncScaleY = false;
+                        hipsNetworkTransform.SyncScaleZ = false;
+                    }
                 }
             }
 
@@ -263,6 +283,13 @@ namespace JU.TPS.Netcode
             if (HipsNetworkTransform && CharacterController.Ragdoller)
             {
                 HipsNetworkTransform.enabled = CharacterController.Ragdoller.State != AdvancedRagdollController.RagdollState.Animated;
+            }
+
+            if (CharacterController.Ragdoller != null && HipsNetworkRigidbody)
+            {
+                bool syncHips = CharacterController.Ragdoller.State == AdvancedRagdollController.RagdollState.Ragdolled;
+                HipsNetworkRigidbody.enabled = syncHips;
+                HipsNetworkTransform.enabled = syncHips;
             }
         }
 

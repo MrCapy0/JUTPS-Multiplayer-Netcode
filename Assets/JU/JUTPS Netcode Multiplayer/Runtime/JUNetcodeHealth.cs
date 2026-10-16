@@ -3,16 +3,115 @@ using UnityEngine;
 
 namespace JU.TPS.Netcode
 {
-    /// <summary>
-    /// Netcode synchronization implementation for <see cref="IHealth"/> component.
-    /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(IHealth))]
     [RequireComponent(typeof(NetworkObject))]
     public class JUNetcodeHealth : NetworkBehaviour
     {
+        private struct HitInfo : INetworkSerializable
+        {
+            public float Damage;
+            public Vector3 HitPosition;
+            public Vector3 HitDirection;
+            public Vector3 HitOriginPosition;
+            public NetworkObjectReference DamageOwner;
+            public bool WasKilled;
+
+            public HitInfo(IHealth.DamageInfo damageInfo)
+            {
+                Damage = damageInfo.Damage;
+                HitPosition = damageInfo.HitPosition;
+                HitDirection = damageInfo.HitDirection;
+                HitOriginPosition = damageInfo.HitOriginPosition;
+                DamageOwner = damageInfo.DamageOwner != null ? damageInfo.DamageOwner.GetComponent<NetworkObject>() : default;
+                WasKilled = false;
+            }
+
+            public HitInfo(IHealth.DamageResultInfo other)
+            {
+                Damage = other.RealDamage;
+                HitPosition = other.HitPosition;
+                HitDirection = other.HitDirection;
+                HitOriginPosition = other.HitOriginPosition;
+                DamageOwner = other.DamageOwner;
+                WasKilled = other.WasKilled;
+            }
+
+            public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+            {
+                serializer.SerializeValue(ref Damage);
+                serializer.SerializeValue(ref HitPosition);
+                serializer.SerializeValue(ref HitDirection);
+                serializer.SerializeValue(ref HitOriginPosition);
+                serializer.SerializeValue(ref DamageOwner);
+                serializer.SerializeValue(ref WasKilled);
+            }
+
+            public IHealth.DamageInfo ToDamageInfo()
+            {
+                return new IHealth.DamageInfo
+                {
+                    Damage = Damage,
+                    HitPosition = HitPosition,
+                    HitDirection = HitDirection,
+                    HitOriginPosition = HitOriginPosition,
+                    DamageOwner = DamageOwner.TryGet(out var obj) ? obj.gameObject : null,
+                };
+            }
+        }
+
+        private struct AddHealthInfo : INetworkSerializable
+        {
+            public float HealthAdded;
+            public NetworkObjectReference Source;
+
+            public AddHealthInfo(IHealth.AddedHealthInfo info)
+            {
+                HealthAdded = info.HealthAdded;
+                Source = default;
+
+                if (info.Source != null)
+                {
+                    if (info.Source is GameObject go)
+                    {
+                        Source = go.GetComponent<NetworkObject>();
+                    }
+                    else if (info.Source is Component comp)
+                    {
+                        Source = comp.GetComponent<NetworkObject>();
+                    }
+                    else
+                    {
+                        Debug.LogError($"Unsupported health source type on Netcode: {info.Source.GetType()}");
+                    }
+                }
+            }
+
+            public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+            {
+                serializer.SerializeValue(ref HealthAdded);
+                serializer.SerializeValue(ref Source);
+            }
+
+            public IHealth.AddedHealthInfo ToAddedHealthInfo()
+            {
+                return new IHealth.AddedHealthInfo
+                {
+                    HealthAdded = HealthAdded,
+                    Source = Source.TryGet(out NetworkObject obj) ? obj.gameObject : null,
+                };
+            }
+        }
+
         private IHealth _health;
-        private IHealth.DamageResultInfo _lastDamageResultInfo;
+
+        private bool _isSyncing;
+        private bool _healthReceived;
+        private bool _maxHealthReceived;
+
+        private NetworkVariable<bool> _netIsDead = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private NetworkVariable<float> _netHealth = new(-1f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private NetworkVariable<float> _netMaxHealth = new(-1f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
         /// <summary>
         /// Gets the <see cref="IHealth"/> component attached to this GameObject.
@@ -30,139 +129,244 @@ namespace JU.TPS.Netcode
             }
         }
 
-        private NetworkVariable<float> _netHealth = new NetworkVariable<float>(-1f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<float> _netMaxHealth = new NetworkVariable<float>(-1f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<float> _netProtection = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<bool> _netIsInvincible = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
 
-            if (IsOwner)
+            if (IsOwner == true)
             {
-                UpdateIfOwner();
-                return;
+                _netHealth.Value = Health.Health;
+                _netMaxHealth.Value = Health.MaxHealth;
+                _netIsDead.Value = Health.IsDead;
+            }
+            else
+            {
+                _netHealth.OnValueChanged += OnNetHealthChanged;
+                _netMaxHealth.OnValueChanged += OnNetMaxHealthChanged;
+                _netIsDead.OnValueChanged += OnNetIsDeadChanged;
+
+                Health.SubscribeOnBeforeDamaged(OnBeforeDamageClient);
+
+                if (_netIsDead.Value == true)
+                {
+                    Health.Kill();
+                }
             }
 
-            _netHealth.OnValueChanged += UpdateHealth;
-            _netMaxHealth.OnValueChanged += UpdateMaxHealth;
-            _netProtection.OnValueChanged += UpdateProtection;
-            _netIsInvincible.OnValueChanged += UpdateIsInvincible;
+            _healthReceived = _netHealth.Value >= 0f;
+            _maxHealthReceived = _netMaxHealth.Value > 0f;
 
-            ApplyHealthState();
-            UpdateProtection(_netProtection.Value, _netProtection.Value);
-            UpdateIsInvincible(_netIsInvincible.Value, _netIsInvincible.Value);
-
-            _health.SubscribeOnBeforeDamaged(OnBeforeDamage);
-            _health.OnDamaged += OnDamaged;
+            Health.OnDamaged += OnDamaged;
+            Health.OnHealthAdded += OnHealthAdded;
+            Health.OnResetHealth += OnResetHealth;
         }
 
         public override void OnNetworkDespawn()
         {
             base.OnNetworkDespawn();
 
-            _netHealth.OnValueChanged -= UpdateHealth;
-            _netMaxHealth.OnValueChanged -= UpdateMaxHealth;
-            _netProtection.OnValueChanged -= UpdateProtection;
-            _netIsInvincible.OnValueChanged -= UpdateIsInvincible;
+            if (IsOwner == false)
+            {
+                _netHealth.OnValueChanged -= OnNetHealthChanged;
+                _netMaxHealth.OnValueChanged -= OnNetMaxHealthChanged;
+                _netIsDead.OnValueChanged -= OnNetIsDeadChanged;
+
+                Health.UnsubscribeOnBeforeDamaged(OnBeforeDamageClient);
+            }
+
+            _healthReceived = false;
+            _maxHealthReceived = false;
+
+            Health.OnDamaged -= OnDamaged;
+            Health.OnHealthAdded -= OnHealthAdded;
+            Health.OnResetHealth -= OnResetHealth;
         }
 
         private void Update()
         {
+            if (IsSpawned == false)
+            {
+                return;
+            }
+
             UpdateIfOwner();
+            UpdateIfNotOwner();
         }
 
         private void UpdateIfOwner()
         {
-            if (IsOwner == false || IsSpawned == false)
+            if (IsOwner == false)
             {
                 return;
             }
 
             _netHealth.Value = Health.Health;
             _netMaxHealth.Value = Health.MaxHealth;
-            _netProtection.Value = Health.Protection;
-            _netIsInvincible.Value = Health.IsInvencible;
+            _netIsDead.Value = Health.IsDead;
         }
 
-        private void UpdateHealth(float previous, float current)
+        private void UpdateIfNotOwner()
         {
-            ApplyHealthState();
-        }
-
-        private void UpdateMaxHealth(float previous, float current)
-        {
-            ApplyHealthState();
-        }
-
-        private void ApplyHealthState()
-        {
-            if (_netMaxHealth.Value <= 0f || _netHealth.Value < 0f)
+            if (IsOwner == true || _healthReceived == false || _maxHealthReceived == false)
             {
                 return;
             }
 
-            if (Health.MaxHealth != _netMaxHealth.Value)
+            _isSyncing = true;
+
+            Health.Protection = 0;
+            Health.IsInvencible = false;
+            Health.SpamHitTime = 0f;
+
+            if (Health.IsDead == false && _netHealth.Value >= 0f)
             {
+                Health.SetHealth(_netHealth.Value);
                 Health.SetMaxHealth(_netMaxHealth.Value);
             }
 
-            if (Health.IsDead == true && _netHealth.Value > 0f)
+            _isSyncing = false;
+        }
+
+        private void OnDamaged(IHealth.DamageResultInfo damageInfo)
+        {
+            if (IsOwner == true)
             {
-                Health.ResetHealth();
-                Health.SetHealth(_netHealth.Value);
+                ApplyDamageOnClientsRpc(new HitInfo(damageInfo));
+                return;
             }
 
-            if (Health.IsDead == false && Health.Health != _netHealth.Value)
+            if (_isSyncing == true)
             {
-                Health.SetHealth(_netHealth.Value);
-            }
-        }
-
-        private void UpdateProtection(float previous, float current)
-        {
-            Health.Protection = current;
-        }
-
-        private void UpdateIsInvincible(bool previous, bool current)
-        {
-            Health.IsInvencible = current;
-        }
-
-        private IHealth.DamageInfo OnBeforeDamage(IHealth.DamageInfo damageInfo)
-        {
-            if (IsOwner == false || IsSpawned == false)
-            {
-                damageInfo.Damage = 0;
-                return damageInfo;
+                return;
             }
 
-            return damageInfo;
+            HitInfo request = new HitInfo(damageInfo);
+            request.Damage = damageInfo.SuggestiveDamage;
+            RequestDamageToOwnerRpc(request);
         }
 
-        private void OnDamaged(IHealth.DamageResultInfo info)
+        private void OnResetHealth()
+        {
+            if (IsOwner == false)
+            {
+                ResetHealthOwnerRpc();
+                return;
+            }
+
+            OnResetHealthClientsRpc();
+            _netHealth.Value = Health.Health;
+            _netMaxHealth.Value = Health.MaxHealth;
+        }
+
+        [Rpc(SendTo.Owner)]
+        private void ResetHealthOwnerRpc()
+        {
+            Health.ResetHealth();
+        }
+
+        [Rpc(SendTo.NotMe)]
+        private void OnResetHealthClientsRpc()
         {
             if (IsOwner == true)
             {
                 return;
             }
 
-            _lastDamageResultInfo = info;
-            AddDamageRpc();
+            Health.ResetHealth();
+        }
+
+        [Rpc(SendTo.Owner)]
+        private void RequestDamageToOwnerRpc(HitInfo damageInfo)
+        {
+            if (IsOwner == false)
+            {
+                return;
+            }
+
+            Health.DoDamage(damageInfo.ToDamageInfo());
+        }
+
+        private void OnHealthAdded(IHealth.AddedHealthInfo healthAddedInfo)
+        {
+            if (IsOwner == true)
+            {
+                return;
+            }
+
+            OnOwnerHealthAddedRpc(new AddHealthInfo(healthAddedInfo));
         }
 
         [Rpc(SendTo.NotMe)]
-        private void AddDamageRpc()
+        private void ApplyDamageOnClientsRpc(HitInfo damageInfo)
         {
-            Health.DoDamage(new IHealth.DamageInfo()
+            if (IsOwner == true)
             {
-                Damage = _lastDamageResultInfo.SuggestiveDamage,
-                DamageOwner = _lastDamageResultInfo.DamageOwner,
-                HitDirection = _lastDamageResultInfo.HitDirection,
-                HitOriginPosition = _lastDamageResultInfo.HitOriginPosition,
-                HitPosition = _lastDamageResultInfo.HitPosition
-            });
+                return;
+            }
+
+            IHealth.DamageInfo info = damageInfo.ToDamageInfo();
+
+            // Only the owner can kill the character.
+            // Prevent non-owners dying by non-synchronized damage.
+            if (damageInfo.WasKilled == false)
+            {
+                info.Damage = Mathf.Min(info.Damage, Health.Health - 0.1f);
+            }
+            else
+            {
+                info.Damage = Mathf.Max(info.Damage, Health.Health + 0.1f);
+            }
+
+            _isSyncing = true;
+            Health.DoDamage(info);
+            if (Health.IsDead == false)
+            {
+                Health.SetHealth(_netHealth.Value);
+            }
+            _isSyncing = false;
+        }
+
+        [Rpc(SendTo.Everyone)]
+        private void OnOwnerHealthAddedRpc(AddHealthInfo healthAddedInfo)
+        {
+            if (IsOwner == true)
+            {
+                return;
+            }
+
+            _isSyncing = true;
+            Health.AddHealth(healthAddedInfo.ToAddedHealthInfo());
+            Health.SetHealth(_netHealth.Value);
+            _isSyncing = false;
+        }
+
+        private IHealth.DamageInfo OnBeforeDamageClient(IHealth.DamageInfo damageInfo)
+        {
+            if (_isSyncing == true)
+            {
+                return damageInfo;
+            }
+
+            damageInfo.Damage = 0;
+            return damageInfo;
+        }
+
+        private void OnNetHealthChanged(float previous, float current)
+        {
+            _healthReceived |= current >= 0f;
+        }
+
+        private void OnNetMaxHealthChanged(float previous, float current)
+        {
+            _maxHealthReceived |= current > 0f;
+        }
+
+        private void OnNetIsDeadChanged(bool previous, bool current)
+        {
+            if (current == true)
+            {
+                Health.Kill();
+            }
         }
     }
 }

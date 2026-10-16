@@ -235,6 +235,94 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 17097409}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &25376762
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -3391737032696509082, guid: e1b89c55b1021204d9700c8a0da1bb8c,
+        type: 3}
+      propertyPath: m_InScenePlaced
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -3391737032696509082, guid: e1b89c55b1021204d9700c8a0da1bb8c,
+        type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 3890444284
+      objectReference: {fileID: 0}
+    - target: {fileID: -3391737032696509082, guid: e1b89c55b1021204d9700c8a0da1bb8c,
+        type: 3}
+      propertyPath: SceneMigrationSynchronization
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -3391737032696509082, guid: e1b89c55b1021204d9700c8a0da1bb8c,
+        type: 3}
+      propertyPath: InScenePlacedSourceGlobalObjectIdHash
+      value: 4167262825
+      objectReference: {fileID: 0}
+    - target: {fileID: 8321083766242570728, guid: e1b89c55b1021204d9700c8a0da1bb8c,
+        type: 3}
+      propertyPath: m_Name
+      value: HealthPowerUp Multiplayer (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 8660911596619967314, guid: e1b89c55b1021204d9700c8a0da1bb8c,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 8660911596619967314, guid: e1b89c55b1021204d9700c8a0da1bb8c,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.23999985
+      objectReference: {fileID: 0}
+    - target: {fileID: 8660911596619967314, guid: e1b89c55b1021204d9700c8a0da1bb8c,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 4.84
+      objectReference: {fileID: 0}
+    - target: {fileID: 8660911596619967314, guid: e1b89c55b1021204d9700c8a0da1bb8c,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8660911596619967314, guid: e1b89c55b1021204d9700c8a0da1bb8c,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8660911596619967314, guid: e1b89c55b1021204d9700c8a0da1bb8c,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8660911596619967314, guid: e1b89c55b1021204d9700c8a0da1bb8c,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8660911596619967314, guid: e1b89c55b1021204d9700c8a0da1bb8c,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8660911596619967314, guid: e1b89c55b1021204d9700c8a0da1bb8c,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8660911596619967314, guid: e1b89c55b1021204d9700c8a0da1bb8c,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e1b89c55b1021204d9700c8a0da1bb8c, type: 3}
 --- !u!1 &27444388
 GameObject:
   m_ObjectHideFlags: 0
@@ -4140,6 +4228,9 @@ MonoBehaviour:
   _storedLocalRotations:
   - {x: -0.07306647, y: 0.06705522, z: -0.7331321, w: 0.6728166}
   - {x: -0.07306647, y: 0.06705522, z: -0.7331321, w: 0.6728166}
+  LimitLocalRotations: 1
+  MinAngles: {x: -75, y: -20, z: -20}
+  MaxAngles: {x: 75, y: 20, z: 20}
 --- !u!1001 &1061331185
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10371,3 +10462,4 @@ SceneRoots:
   - {fileID: 4480731624646742166}
   - {fileID: 1603973454}
   - {fileID: 1428101009}
+  - {fileID: 25376762}
