@@ -116,6 +116,19 @@ namespace JU.TPS.Netcode
             }
         }
 
+        public bool IsDead
+        {
+            get
+            {
+                if (_health == null)
+                {
+                    return false;
+                }
+
+                return _health.IsDead;
+            }
+        }
+
         /// <summary>
         /// Bounds of <see cref="Collider"/>, or a small box at this position if there is none.
         /// </summary>

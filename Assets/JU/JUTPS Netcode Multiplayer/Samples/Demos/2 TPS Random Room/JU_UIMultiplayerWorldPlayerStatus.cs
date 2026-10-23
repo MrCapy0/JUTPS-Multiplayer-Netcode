@@ -10,77 +10,6 @@ namespace JU.TPS.Netcode
     /// </summary>
     public class JU_UIMultiplayerWorldPlayerStatus : MonoBehaviour
     {
-        private static JU_UIMultiplayerWorldPlayerStatus _template;
-        private static Camera _camera;
-
-        [Tooltip("Root object of the indicator, toggled on and off.")]
-        [SerializeField] private GameObject _container;
-        [Tooltip("Text that displays the player name.")]
-        [SerializeField] private Text _playerNameText;
-
-        /// <summary>Player tracked by this indicator.</summary>
-        public JUPlayerPropertiesBase PlayerProperties { get; private set; }
-
-        private void Start()
-        {
-            if (_template == null)
-            {
-                _template = this;
-                gameObject.SetActive(false);
-
-                JU_PlayerStatusManager.Setup();
-                return;
-            }
-
-            Refresh();
-        }
-
-        private void Update()
-        {
-            Refresh();
-        }
-
-        private void Refresh()
-        {
-            if (_camera == null || _camera.isActiveAndEnabled == false)
-            {
-                _camera = Camera.main;
-            }
-
-            Debug.Assert(_camera, "There are no active cameras in the scene.");
-
-            if (PlayerProperties == null)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            if (PlayerProperties.gameObject.activeInHierarchy == false)
-            {
-                _container.SetActive(false);
-                return;
-            }
-
-            Vector3 targetWorldPosition = PlayerProperties.UpperCenter + (Vector3.up * 0.2f);
-
-            Vector3 directionToTarget = (targetWorldPosition - _camera.transform.position).normalized;
-            targetWorldPosition = _camera.transform.position + directionToTarget; // Avoid clipping issues with the camera.
-
-            // The target is behind the camera, hide the UI indicator.
-            if (directionToTarget == Vector3.zero || Vector3.Dot(directionToTarget / directionToTarget.magnitude, _camera.transform.forward) < 0f)
-            {
-                _container.SetActive(false);
-                return;
-            }
-
-            _container.SetActive(true);
-            Vector3 screenPosition = _camera.WorldToScreenPoint(targetWorldPosition);
-
-            // Update the UI indicator's position on the screen.
-            _container.transform.position = screenPosition;
-            _playerNameText.text = PlayerProperties.PlayerName;
-        }
-
         private class JU_PlayerStatusManager : MonoBehaviour
         {
             private static JU_PlayerStatusManager _instance;
@@ -163,6 +92,116 @@ namespace JU.TPS.Netcode
                 JU_UIMultiplayerWorldPlayerStatus indicator = _indicators[player];
                 _indicators.Remove(player);
                 Destroy(indicator.gameObject);
+            }
+        }
+
+        private static JU_UIMultiplayerWorldPlayerStatus _template;
+        private static Camera _camera;
+
+        [Tooltip("Smooth position speed.")]
+        [SerializeField]
+        [Range(1f, 10f)]
+        private float _smooth;
+
+        [Header("UI")]
+
+        [Tooltip("Root object of the indicator, toggled on and off.")]
+        [SerializeField] private GameObject _container;
+
+        [Tooltip("Text that displays the player name.")]
+        [SerializeField] private Text _playerNameText;
+
+        [Tooltip("Slider that displays the player's health.")]
+        [SerializeField] private Slider _healthSlider;
+
+        /// <summary>Player tracked by this indicator.</summary>
+        public JUPlayerPropertiesBase PlayerProperties { get; private set; }
+
+        private void Reset()
+        {
+            _smooth = 5f;
+        }
+
+        private void Start()
+        {
+            if (_template == null)
+            {
+                _template = this;
+                gameObject.SetActive(false);
+
+                JU_PlayerStatusManager.Setup();
+                return;
+            }
+
+            Refresh();
+        }
+
+        private void Update()
+        {
+            Refresh();
+        }
+
+        private void Refresh()
+        {
+            if (_camera == null || _camera.isActiveAndEnabled == false)
+            {
+                _camera = Camera.main;
+            }
+
+            Debug.Assert(_camera, "There are no active cameras in the scene.");
+
+            if (PlayerProperties == null)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            if (PlayerProperties.gameObject.activeInHierarchy == false)
+            {
+                _container.SetActive(false);
+                return;
+            }
+
+            Vector3 targetWorldPosition = PlayerProperties.UpperCenter + (Vector3.up * 0.2f);
+
+            Vector3 directionToTarget = (targetWorldPosition - _camera.transform.position).normalized;
+            targetWorldPosition = _camera.transform.position + directionToTarget; // Avoid clipping issues with the camera.
+
+            // The target is behind the camera, hide the UI indicator.
+            if (directionToTarget == Vector3.zero || Vector3.Dot(directionToTarget / directionToTarget.magnitude, _camera.transform.forward) < 0f)
+            {
+                _container.SetActive(false);
+                return;
+            }
+
+            _container.SetActive(true);
+            Vector3 screenPosition = _camera.WorldToScreenPoint(targetWorldPosition);
+
+            // Update the UI indicator's position on the screen.
+            {
+                float smoothFactor = Mathf.Clamp01(Vector3.Distance(_container.transform.position, screenPosition) * _smooth * Time.deltaTime);
+                _container.transform.position = Vector3.Lerp(_container.transform.position, screenPosition, smoothFactor);
+            }
+
+
+            if (_playerNameText != null)
+            {
+                _playerNameText.text = PlayerProperties.PlayerName;
+            }
+
+            if (_healthSlider != null)
+            {
+                if (PlayerProperties.IsDead == false)
+                {
+                    _healthSlider.gameObject.SetActive(true);
+                    _healthSlider.minValue = 0f;
+                    _healthSlider.maxValue = 1f;
+                    _healthSlider.value = PlayerProperties.NormalizedHealth;
+                }
+                else
+                {
+                    _healthSlider.gameObject.SetActive(false);
+                }
             }
         }
     }
