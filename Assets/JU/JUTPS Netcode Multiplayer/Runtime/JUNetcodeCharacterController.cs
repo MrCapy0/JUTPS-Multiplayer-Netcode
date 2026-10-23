@@ -52,24 +52,28 @@ namespace JU.TPS.Netcode
 
         private JUCharacterController _tps;
         private DriveVehicles _driveAbility;
-
         private NetworkTransform _networkTransform;
         private NetworkRigidbody _networkRigidbody;
         private NetworkTransform _hipsNetworkTransform;
         private NetworkRigidbody _hipsNetworkRigidbody;
 
-        private NetworkVariable<Vector2> _netMoveAxis = new NetworkVariable<Vector2>(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<Vector3> _netLookPosition = new NetworkVariable<Vector3>(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<Flags> _netStateFlags = new NetworkVariable<Flags>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<byte> _netRightHandItem = new NetworkVariable<byte>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<AdvancedRagdollController.RagdollState> _netRagdollState = new NetworkVariable<AdvancedRagdollController.RagdollState>(AdvancedRagdollController.RagdollState.Animated, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<NetworkObjectReference> _netCurrentVehicle = new NetworkVariable<NetworkObjectReference>(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<bool> _netIsDriving = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private NetworkVariable<Vector2> _netMoveAxis;
+        private NetworkVariable<Vector3> _netLookPosition;
+        private NetworkVariable<Flags> _netStateFlags;
+        private NetworkVariable<byte> _netRightHandItem;
+        private NetworkVariable<AdvancedRagdollController.RagdollState> _netRagdollState;
+        private NetworkVariable<NetworkObjectReference> _netCurrentVehicle;
+        private NetworkVariable<bool> _netIsDriving;
 
         private Flags _clientLastFlags;
         private TriggeredInputFlags _clientLastTriggeredInputFlags;
 
+        /// <summary>User interface prefab instantiated for the owning player.</summary>
+        [Tooltip("User interface prefab instantiated for the owning player.")]
         public GameObject UserInterfacePrefab;
+
+        /// <summary>Camera controller prefab instantiated for the owning player.</summary>
+        [Tooltip("Camera controller prefab instantiated for the owning player.")]
         public TPSCameraController CameraControllerPrefab;
 
         /// <summary>
@@ -156,6 +160,20 @@ namespace JU.TPS.Netcode
             }
         }
 
+        /// <summary>
+        /// Creates the owner-written network variables.
+        /// </summary>
+        public JUNetcodeCharacterController()
+        {
+            _netMoveAxis = new NetworkVariable<Vector2>(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netLookPosition = new NetworkVariable<Vector3>(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netStateFlags = new NetworkVariable<Flags>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netRightHandItem = new NetworkVariable<byte>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netRagdollState = new NetworkVariable<AdvancedRagdollController.RagdollState>(AdvancedRagdollController.RagdollState.Animated, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netCurrentVehicle = new NetworkVariable<NetworkObjectReference>(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netIsDriving = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        }
+
         private void Reset()
         {
             if (Application.isPlaying == false)
@@ -219,7 +237,7 @@ namespace JU.TPS.Netcode
             EnsureSettings();
         }
 
-        private void Awake()
+        private void Start()
         {
             Transform characterHips = CharacterController.anim.GetBoneTransform(HumanBodyBones.Hips);
             if (characterHips != null)
@@ -236,6 +254,25 @@ namespace JU.TPS.Netcode
             }
         }
 
+        private void Update()
+        {
+            UpdateIfOwner();
+            UpdateIfNonOwner();
+
+            if (HipsNetworkTransform && CharacterController.Ragdoller)
+            {
+                HipsNetworkTransform.enabled = CharacterController.Ragdoller.State != AdvancedRagdollController.RagdollState.Animated;
+            }
+
+            if (CharacterController.Ragdoller != null && HipsNetworkRigidbody)
+            {
+                bool syncHips = CharacterController.Ragdoller.State == AdvancedRagdollController.RagdollState.Ragdolled;
+                HipsNetworkRigidbody.enabled = syncHips;
+                HipsNetworkTransform.enabled = syncHips;
+            }
+        }
+
+        /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
@@ -272,24 +309,6 @@ namespace JU.TPS.Netcode
 
                 // The client started ragdoll but the server needs to be notified.
                 CharacterController.OnStartRagdollCollision += OnRagdollStartedRpc;
-            }
-        }
-
-        private void Update()
-        {
-            UpdateIfOwner();
-            UpdateIfNonOwner();
-
-            if (HipsNetworkTransform && CharacterController.Ragdoller)
-            {
-                HipsNetworkTransform.enabled = CharacterController.Ragdoller.State != AdvancedRagdollController.RagdollState.Animated;
-            }
-
-            if (CharacterController.Ragdoller != null && HipsNetworkRigidbody)
-            {
-                bool syncHips = CharacterController.Ragdoller.State == AdvancedRagdollController.RagdollState.Ragdolled;
-                HipsNetworkRigidbody.enabled = syncHips;
-                HipsNetworkTransform.enabled = syncHips;
             }
         }
 
@@ -622,7 +641,7 @@ namespace JU.TPS.Netcode
 
             if (IsOwner)
             {
-                _netCurrentVehicle.Value = new();
+                _netCurrentVehicle.Value = new NetworkObjectReference();
             }
         }
 
@@ -642,7 +661,7 @@ namespace JU.TPS.Netcode
 
             if (IsOwner)
             {
-                _netCurrentVehicle.Value = new();
+                _netCurrentVehicle.Value = new NetworkObjectReference();
             }
         }
 

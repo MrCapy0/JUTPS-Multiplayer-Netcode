@@ -2,9 +2,12 @@
     "name": "JUTPS.Multiplayer.Netcode",
     "rootNamespace": "",
     "references": [
+        "JUTPS",
+        "Unity.Collections",
         "Unity.Netcode.Runtime",
-        "Unity.Netcode.Components",
-        "JUTPS"
+        "Unity.Services.Core",
+        "Unity.Services.Authentication",
+        "Unity.Services.Multiplayer"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

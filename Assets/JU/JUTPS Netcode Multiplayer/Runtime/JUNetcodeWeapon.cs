@@ -10,27 +10,47 @@ namespace JU.TPS.Netcode
     [DisallowMultipleComponent]
     public class JUNetcodeWeapon : JUNetcodeItem<Weapon>
     {
-        private NetworkVariable<int> _netTotalBullets = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<int> _netBulletsPerMagazine = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<int> _netBulletsAmounts = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<int> _netNumberOfShotgunBulletsPerShot = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<bool> _netInfiniteAmmo = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private readonly NetworkVariable<int> _netTotalBullets;
+        private readonly NetworkVariable<int> _netBulletsPerMagazine;
+        private readonly NetworkVariable<int> _netBulletsAmounts;
+        private readonly NetworkVariable<int> _netNumberOfShotgunBulletsPerShot;
+        private readonly NetworkVariable<bool> _netInfiniteAmmo;
+        private readonly NetworkVariable<float> _fireRate;
+        private readonly NetworkVariable<float> _precision;
+        private readonly NetworkVariable<float> _netLossOfAccuracyPerShot;
+        private readonly NetworkVariable<float> _netRecoilForce;
+        private readonly NetworkVariable<float> _netRecoilForceRotation;
+        private readonly NetworkVariable<float> _netSliderMovementOffset;
+        private readonly NetworkVariable<float> _netSliderMovementSpeed;
+        private readonly NetworkVariable<float> _netWeaponPositionSpeed;
+        private readonly NetworkVariable<float> _netWeaponRotationSpeed;
+        private readonly NetworkVariable<Vector3> _netCameraPosition;
+        private readonly NetworkVariable<Vector3> _netShootDirection;
 
-        private NetworkVariable<float> _fireRate = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<float> _precision = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<float> _netLossOfAccuracyPerShot = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        /// <summary>
+        /// Creates the owner-written network variables.
+        /// </summary>
+        public JUNetcodeWeapon()
+        {
+            _netTotalBullets = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netBulletsPerMagazine = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netBulletsAmounts = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netNumberOfShotgunBulletsPerShot = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netInfiniteAmmo = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _fireRate = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _precision = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netLossOfAccuracyPerShot = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netRecoilForce = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netRecoilForceRotation = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netSliderMovementOffset = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netSliderMovementSpeed = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netWeaponPositionSpeed = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netWeaponRotationSpeed = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netCameraPosition = new NetworkVariable<Vector3>(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netShootDirection = new NetworkVariable<Vector3>(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        }
 
-        private NetworkVariable<float> _netRecoilForce = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<float> _netRecoilForceRotation = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
-        private NetworkVariable<float> _netSliderMovementOffset = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<float> _netSliderMovementSpeed = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<float> _netWeaponPositionSpeed = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<float> _netWeaponRotationSpeed = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
-        private NetworkVariable<Vector3> _netCameraPosition = new NetworkVariable<Vector3>(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<Vector3> _netShootDirection = new NetworkVariable<Vector3>(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
+        /// <inheritdoc/>
         protected override void Awake()
         {
             base.Awake();
@@ -47,6 +67,7 @@ namespace JU.TPS.Netcode
             };
         }
 
+        /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
@@ -89,6 +110,7 @@ namespace JU.TPS.Netcode
             UpdateShootDirection(_netShootDirection.Value, _netShootDirection.Value);
         }
 
+        /// <inheritdoc/>
         public override void OnNetworkDespawn()
         {
             base.OnNetworkDespawn();
@@ -111,6 +133,7 @@ namespace JU.TPS.Netcode
             _netShootDirection.OnValueChanged -= UpdateShootDirection;
         }
 
+        /// <inheritdoc/>
         protected override void UpdateIfOwner()
         {
             base.UpdateIfOwner();
@@ -141,6 +164,7 @@ namespace JU.TPS.Netcode
             _netShootDirection.Value = Item.ShootDirection;
         }
 
+        /// <inheritdoc/>
         protected override void UpdateIfNotOwner()
         {
             base.UpdateIfNotOwner();

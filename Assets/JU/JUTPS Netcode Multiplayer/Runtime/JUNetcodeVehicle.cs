@@ -4,36 +4,42 @@ using UnityEngine;
 
 namespace JU.TPS.Netcode
 {
+    /// <summary>
+    /// Synchronizes the inputs and state of a <see cref="JUWheeledVehicle"/> from its owner to the other clients.
+    /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(JUWheeledVehicle))]
     public class JUNetcodeVehicle : NetworkBehaviour
     {
         private JUWheeledVehicle _vehicle;
 
-        private NetworkVariable<float> _netVerticalInput = new NetworkVariable<float>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<float> _netHorizontalInput = new NetworkVariable<float>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<float> _netBrakeInput = new NetworkVariable<float>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<bool> _netIsOn = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private readonly NetworkVariable<float> _netVerticalInput;
+        private readonly NetworkVariable<float> _netHorizontalInput;
+        private readonly NetworkVariable<float> _netBrakeInput;
+        private readonly NetworkVariable<bool> _netIsOn;
 
         /// <summary>
         /// The <see cref="JUWheeledVehicle"/> component attached to this GameObject.
         /// </summary>
         public JUWheeledVehicle Vehicle
         {
-            get
-            {
-                if (_vehicle == null)
-                {
-                    _vehicle = GetComponent<JUWheeledVehicle>();
-                }
-
-                return _vehicle;
-            }
+            get => _vehicle;
         }
 
-        public override void OnDestroy()
+        /// <summary>
+        /// Creates the synchronized variables.
+        /// </summary>
+        public JUNetcodeVehicle()
         {
-            base.OnDestroy();
+            _netVerticalInput = new NetworkVariable<float>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netHorizontalInput = new NetworkVariable<float>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netBrakeInput = new NetworkVariable<float>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netIsOn = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        }
+
+        private void Start()
+        {
+            _vehicle = GetComponent<JUWheeledVehicle>();
         }
 
         private void Update()
@@ -45,6 +51,26 @@ namespace JU.TPS.Netcode
 
             UpdateIfOwner();
             UpdateIfNotOwner();
+        }
+
+        /// <summary>
+        /// Set the client that owns this vehicle.
+        /// </summary>
+        /// <param name="ownerClientId">Id of the new owner client.</param>
+        public void SetOwnership(ulong ownerClientId)
+        {
+            SetOwnershipRpc(ownerClientId);
+        }
+
+        [Rpc(SendTo.Authority)]
+        private void SetOwnershipRpc(ulong ownerClientId)
+        {
+            if (HasAuthority == false)
+            {
+                return;
+            }
+
+            NetworkObject.ChangeOwnership(ownerClientId);
         }
 
         private void UpdateIfOwner()
@@ -60,7 +86,7 @@ namespace JU.TPS.Netcode
             _netBrakeInput.Value = Vehicle.Brake;
             _netIsOn.Value = Vehicle.IsOn;
         }
-
+        
         private void UpdateIfNotOwner()
         {
             if (IsOwner == true)
@@ -73,26 +99,6 @@ namespace JU.TPS.Netcode
             Vehicle.Horizontal = _netHorizontalInput.Value;
             Vehicle.Brake = _netBrakeInput.Value;
             Vehicle.IsOn = _netIsOn.Value;
-        }
-
-        /// <summary>
-        /// Set the client that owns this vehicle.
-        /// </summary>
-        /// <param name="ownerClientId"></param>
-        public void SetOwnership(ulong ownerClientId)
-        {
-            SetOwnershipRpc(ownerClientId);
-        }
-
-        [Rpc(SendTo.Authority)]
-        private void SetOwnershipRpc(ulong ownerClientId)
-        {
-            if (HasAuthority == false)
-            {
-                return;
-            }
-
-            NetworkObject.ChangeOwnership(ownerClientId);
         }
     }
 }

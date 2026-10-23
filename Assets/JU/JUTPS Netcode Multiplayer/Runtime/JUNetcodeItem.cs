@@ -8,16 +8,20 @@ namespace JU.TPS.Netcode
     /// Use it as a base class for items that need to be synchronized over the network.
     /// </summary>
     /// <typeparam name="T">The type of the item that this component synchronizes.</typeparam>
-    public abstract class JUNetcodeItem<T> : NetworkBehaviour where T : JUItem
+    public abstract class JUNetcodeItem<
+        // The item type that this component synchronizes.
+        T
+    > : NetworkBehaviour
+    where T : JUItem
     {
         private T _item;
 
-        private NetworkVariable<bool> _netUnlocked = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<int> _netQuantity = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<int> _netMaxQuantity = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private readonly NetworkVariable<bool> _netUnlocked;
+        private readonly NetworkVariable<int> _netQuantity;
+        private readonly NetworkVariable<int> _netMaxQuantity;
 
         /// <summary>
-        /// The item attached to this component.
+        /// The item attached to this component. Resolved lazily because it is used by <see cref="OnNetworkSpawn"/>, which can run before <see cref="Start"/>.
         /// </summary>
         public T Item
         {
@@ -32,6 +36,16 @@ namespace JU.TPS.Netcode
             }
         }
 
+        /// <summary>
+        /// Creates the synchronized variables.
+        /// </summary>
+        protected JUNetcodeItem()
+        {
+            _netUnlocked = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netQuantity = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netMaxQuantity = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        }
+
         protected virtual void Awake()
         {
         }
@@ -42,9 +56,17 @@ namespace JU.TPS.Netcode
 
         protected virtual void Update()
         {
-            UpdateIfOwner();
+            if (IsOwner)
+            {
+                UpdateIfOwner();
+            }
+            else
+            {
+                UpdateIfNotOwner();
+            }
         }
 
+        /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
@@ -63,6 +85,7 @@ namespace JU.TPS.Netcode
             UpdateMaxQuantity(_netMaxQuantity.Value, _netMaxQuantity.Value);
         }
 
+        /// <inheritdoc/>
         public override void OnNetworkDespawn()
         {
             base.OnNetworkDespawn();
@@ -72,6 +95,9 @@ namespace JU.TPS.Netcode
             _netMaxQuantity.OnValueChanged -= UpdateMaxQuantity;
         }
 
+        /// <summary>
+        /// Publishes the state of <see cref="Item"/> to the network. Runs only on the owner.
+        /// </summary>
         protected virtual void UpdateIfOwner()
         {
             if (IsOwner == false)
@@ -84,9 +110,11 @@ namespace JU.TPS.Netcode
             _netMaxQuantity.Value = Item.MaxItemQuantity;
         }
 
+        /// <summary>
+        /// Extension point for per-frame logic that runs on non-owners.
+        /// </summary>
         protected virtual void UpdateIfNotOwner()
         {
-
         }
 
         private void UpdateUnlocked(bool previous, bool current)

@@ -3,6 +3,10 @@ using UnityEngine;
 
 namespace JU.TPS.Netcode
 {
+    /// <summary>
+    /// Netcode multiplayer synchronization for <see cref="IHealth"/>.
+    /// The owner is authoritative; non-owners forward damage to the owner and mirror its state.
+    /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(IHealth))]
     [RequireComponent(typeof(NetworkObject))]
@@ -11,10 +15,15 @@ namespace JU.TPS.Netcode
         private struct HitInfo : INetworkSerializable
         {
             public float Damage;
+
             public Vector3 HitPosition;
+
             public Vector3 HitDirection;
+
             public Vector3 HitOriginPosition;
+
             public NetworkObjectReference DamageOwner;
+
             public bool WasKilled;
 
             public HitInfo(IHealth.DamageInfo damageInfo)
@@ -55,7 +64,7 @@ namespace JU.TPS.Netcode
                     HitPosition = HitPosition,
                     HitDirection = HitDirection,
                     HitOriginPosition = HitOriginPosition,
-                    DamageOwner = DamageOwner.TryGet(out var obj) ? obj.gameObject : null,
+                    DamageOwner = DamageOwner.TryGet(out NetworkObject obj) ? obj.gameObject : null,
                 };
             }
         }
@@ -63,6 +72,7 @@ namespace JU.TPS.Netcode
         private struct AddHealthInfo : INetworkSerializable
         {
             public float HealthAdded;
+
             public NetworkObjectReference Source;
 
             public AddHealthInfo(IHealth.AddedHealthInfo info)
@@ -104,17 +114,17 @@ namespace JU.TPS.Netcode
         }
 
         private IHealth _health;
-
         private bool _isSyncing;
         private bool _healthReceived;
         private bool _maxHealthReceived;
 
-        private NetworkVariable<bool> _netIsDead = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<float> _netHealth = new(-1f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<float> _netMaxHealth = new(-1f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private readonly NetworkVariable<bool> _netIsDead;
+        private readonly NetworkVariable<float> _netHealth;
+        private readonly NetworkVariable<float> _netMaxHealth;
 
         /// <summary>
         /// Gets the <see cref="IHealth"/> component attached to this GameObject.
+        /// Lazy because it is used from network callbacks that may run before Start.
         /// </summary>
         public IHealth Health
         {
@@ -129,6 +139,28 @@ namespace JU.TPS.Netcode
             }
         }
 
+        /// <summary>
+        /// Creates the owner-written network variables.
+        /// </summary>
+        public JUNetcodeHealth()
+        {
+            _netIsDead = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netHealth = new NetworkVariable<float>(-1f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netMaxHealth = new NetworkVariable<float>(-1f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        }
+
+        private void Update()
+        {
+            if (IsSpawned == false)
+            {
+                return;
+            }
+
+            UpdateIfOwner();
+            UpdateIfNotOwner();
+        }
+
+        /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
@@ -161,6 +193,7 @@ namespace JU.TPS.Netcode
             Health.OnResetHealth += OnResetHealth;
         }
 
+        /// <inheritdoc/>
         public override void OnNetworkDespawn()
         {
             base.OnNetworkDespawn();
@@ -180,17 +213,6 @@ namespace JU.TPS.Netcode
             Health.OnDamaged -= OnDamaged;
             Health.OnHealthAdded -= OnHealthAdded;
             Health.OnResetHealth -= OnResetHealth;
-        }
-
-        private void Update()
-        {
-            if (IsSpawned == false)
-            {
-                return;
-            }
-
-            UpdateIfOwner();
-            UpdateIfNotOwner();
         }
 
         private void UpdateIfOwner()
@@ -245,36 +267,6 @@ namespace JU.TPS.Netcode
             RequestDamageToOwnerRpc(request);
         }
 
-        private void OnResetHealth()
-        {
-            if (IsOwner == false)
-            {
-                ResetHealthOwnerRpc();
-                return;
-            }
-
-            OnResetHealthClientsRpc();
-            _netHealth.Value = Health.Health;
-            _netMaxHealth.Value = Health.MaxHealth;
-        }
-
-        [Rpc(SendTo.Owner)]
-        private void ResetHealthOwnerRpc()
-        {
-            Health.ResetHealth();
-        }
-
-        [Rpc(SendTo.NotMe)]
-        private void OnResetHealthClientsRpc()
-        {
-            if (IsOwner == true)
-            {
-                return;
-            }
-
-            Health.ResetHealth();
-        }
-
         [Rpc(SendTo.Owner)]
         private void RequestDamageToOwnerRpc(HitInfo damageInfo)
         {
@@ -284,16 +276,6 @@ namespace JU.TPS.Netcode
             }
 
             Health.DoDamage(damageInfo.ToDamageInfo());
-        }
-
-        private void OnHealthAdded(IHealth.AddedHealthInfo healthAddedInfo)
-        {
-            if (IsOwner == true)
-            {
-                return;
-            }
-
-            OnOwnerHealthAddedRpc(new AddHealthInfo(healthAddedInfo));
         }
 
         [Rpc(SendTo.NotMe)]
@@ -324,6 +306,46 @@ namespace JU.TPS.Netcode
                 Health.SetHealth(_netHealth.Value);
             }
             _isSyncing = false;
+        }
+
+        private void OnResetHealth()
+        {
+            if (IsOwner == false)
+            {
+                ResetHealthOwnerRpc();
+                return;
+            }
+
+            OnResetHealthClientsRpc();
+            _netHealth.Value = Health.Health;
+            _netMaxHealth.Value = Health.MaxHealth;
+        }
+
+        [Rpc(SendTo.Owner)]
+        private void ResetHealthOwnerRpc()
+        {
+            Health.ResetHealth();
+        }
+
+        [Rpc(SendTo.NotMe)]
+        private void OnResetHealthClientsRpc()
+        {
+            if (IsOwner == true)
+            {
+                return;
+            }
+
+            Health.ResetHealth();
+        }
+
+        private void OnHealthAdded(IHealth.AddedHealthInfo healthAddedInfo)
+        {
+            if (IsOwner == true)
+            {
+                return;
+            }
+
+            OnOwnerHealthAddedRpc(new AddHealthInfo(healthAddedInfo));
         }
 
         [Rpc(SendTo.Everyone)]
