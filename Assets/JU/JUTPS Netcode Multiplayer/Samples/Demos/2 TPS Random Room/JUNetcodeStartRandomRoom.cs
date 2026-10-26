@@ -1,17 +1,16 @@
 using System;
-using JU.TPS.Netcode;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace JU.TPS.Lobby
+namespace JU.TPS.Netcode
 {
     /// <summary>
     /// Lobby screen that validates the player name and loads the game scene to create or join a random room.
     /// </summary>
-    public class JULobbyStartRandomRoom : MonoBehaviour
+    public class JUNetcodeStartRandomRoom : MonoBehaviour
     {
         [Header("Lobby Settings")]
         [Tooltip("Name of the scene loaded when the match starts.")]

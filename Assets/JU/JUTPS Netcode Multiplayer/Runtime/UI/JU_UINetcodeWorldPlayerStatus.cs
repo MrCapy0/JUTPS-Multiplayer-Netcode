@@ -8,17 +8,17 @@ namespace JU.TPS.Netcode
     /// World-space status indicator (player name) that follows a remote player on screen.
     /// The first instance found acts as the hidden template cloned for each remote player.
     /// </summary>
-    public class JU_UIMultiplayerWorldPlayerStatus : MonoBehaviour
+    public class JU_UINetcodeWorldPlayerStatus : MonoBehaviour
     {
         private class JU_PlayerStatusManager : MonoBehaviour
         {
             private static JU_PlayerStatusManager _instance;
 
-            private readonly Dictionary<JUPlayerPropertiesBase, JU_UIMultiplayerWorldPlayerStatus> _indicators;
+            private readonly Dictionary<JUPlayerPropertiesBase, JU_UINetcodeWorldPlayerStatus> _indicators;
 
             public JU_PlayerStatusManager()
             {
-                _indicators = new Dictionary<JUPlayerPropertiesBase, JU_UIMultiplayerWorldPlayerStatus>();
+                _indicators = new Dictionary<JUPlayerPropertiesBase, JU_UINetcodeWorldPlayerStatus>();
             }
 
             private void Awake()
@@ -65,7 +65,7 @@ namespace JU.TPS.Netcode
                     return;
                 }
 
-                JU_UIMultiplayerWorldPlayerStatus indicator = Instantiate(_template, transform);
+                JU_UINetcodeWorldPlayerStatus indicator = Instantiate(_template, transform);
                 indicator.PlayerProperties = playerProperties;
 
                 _indicators.Add(playerProperties, indicator);
@@ -89,13 +89,13 @@ namespace JU.TPS.Netcode
                     return;
                 }
 
-                JU_UIMultiplayerWorldPlayerStatus indicator = _indicators[player];
+                JU_UINetcodeWorldPlayerStatus indicator = _indicators[player];
                 _indicators.Remove(player);
                 Destroy(indicator.gameObject);
             }
         }
 
-        private static JU_UIMultiplayerWorldPlayerStatus _template;
+        private static JU_UINetcodeWorldPlayerStatus _template;
         private static Camera _camera;
 
         [Tooltip("Smooth position speed.")]
