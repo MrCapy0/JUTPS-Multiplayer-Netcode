@@ -226,7 +226,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: JUTPS.Multiplayer.Netcode::JU.TPS.Lobby.JULobbyStartRandomRoom
   _gameScene: TPS Random Room
   _lobbyId: ad057a90-4753-4b3d-a225-6a02f0265081
-  _maxPlayers: 2
+  _maxPlayers: 4
   _playerNameText: {fileID: 466731564}
   _startButton: {fileID: 1858251249}
   _warningText: {fileID: 1706509502}

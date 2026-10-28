@@ -14,7 +14,7 @@ namespace JU.TPS.Netcode
     /// <summary>
     /// Base serializable settings used to start a match. Extend it to add mode-specific options.
     /// </summary>
-    [System.Serializable]
+    [Serializable]
     public abstract class MatchSettingsBase
     {
         [Tooltip("Name of the multiplayer session to create or join.")]
@@ -54,8 +54,9 @@ namespace JU.TPS.Netcode
     /// </summary>
     public abstract class JUPlayerPropertiesBase : NetworkBehaviour
     {
-        private IHealth _health;
+        private (Vector3 position, Quaternion rotation)? _spawnTransform;
 
+        private IHealth _health;
         private NetworkVariable<FixedString64Bytes> _netPlayerName;
 
         /// <summary>
@@ -165,11 +166,33 @@ namespace JU.TPS.Netcode
         }
 
         /// <summary>
+        /// Spawn position and rotation of the player.
+        /// </summary>
+        public virtual (Vector3 position, Quaternion rotation) Spawn
+        {
+            get
+            {
+                if (_spawnTransform == null)
+                {
+                    if (IsSpawned == false)
+                    {
+                        throw new InvalidOperationException("The player spawn transform is unavailable before the NetworkObject is spawned.");
+                    }
+
+                    (Vector3 position, Quaternion rotation) spawn = JUNetcodeMatchManagerBase.RawInstance.GenerateSpawnPosition(OwnerClientId);
+                    _spawnTransform = spawn;
+                }
+
+                return _spawnTransform.Value;
+            }
+        }
+
+        /// <summary>
         /// Creates <see cref="_netPlayerName"/>.
         /// </summary>
         protected JUPlayerPropertiesBase()
         {
-            _netPlayerName = new NetworkVariable<FixedString64Bytes>(new FixedString64Bytes(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _netPlayerName = new(new FixedString64Bytes(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         }
 
         /// <summary>
@@ -276,10 +299,7 @@ namespace JU.TPS.Netcode
         public override void OnNetworkDespawn()
         {
             base.OnNetworkDespawn();
-            StartCoroutine(WaitForSpawned(() =>
-            {
-                OnPlayerDespawned?.Invoke((TPlayerProperties)this);
-            }));
+            OnPlayerDespawned?.Invoke((TPlayerProperties)this);
         }
 
         private IEnumerator WaitForSpawned(UnityAction onSpawned)
@@ -301,6 +321,9 @@ namespace JU.TPS.Netcode
         private static bool _setupDone;
 
         private static JUNetcodeMatchManagerBase _rawInstance;
+        private bool _isPlayerSpawnConfigured;
+        private bool _isLocalPlayerSpawned;
+        private bool _isLeavingSession;
 
         /// <summary>
         /// Raised when the local player creates or joins a session.
@@ -352,6 +375,8 @@ namespace JU.TPS.Netcode
 
         protected virtual void Awake()
         {
+            Application.wantsToQuit += TryQuit;
+
             if (_setupDone == false)
             {
                 _setupDone = true;
@@ -367,6 +392,8 @@ namespace JU.TPS.Netcode
             }
 
             Debug.Assert(_rawInstance == this, $"Another Match Manager ({_rawInstance.name} of type {_rawInstance.GetType().Name}) already exists. Multiple instances are not allowed.");
+
+            ConfigureConnectionApproval();
         }
 
         protected virtual void OnEnable()
@@ -377,11 +404,25 @@ namespace JU.TPS.Netcode
         {
         }
 
+        protected virtual void OnApplicationQuit()
+        {
+        }
+
         protected virtual void Start()
         {
             ThrowIfNetworkManagerMissing();
-            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
-            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+            if (_isPlayerSpawnConfigured == false)
+            {
+                ConfigureConnectionApproval();
+            }
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            networkManager.OnClientConnectedCallback += SpawnPlayerOnConnected;
+
+            if (networkManager.IsConnectedClient)
+            {
+                SpawnPlayerOnConnected(networkManager.LocalClientId);
+            }
         }
 
         protected virtual void Update()
@@ -391,13 +432,97 @@ namespace JU.TPS.Netcode
         public override void OnDestroy()
         {
             _rawInstance = null;
+            Application.wantsToQuit -= TryQuit;
+
             base.OnDestroy();
 
             if (NetworkManager.Singleton != null)
             {
-                NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
-                NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
+                NetworkManager.Singleton.OnClientConnectedCallback -= SpawnPlayerOnConnected;
             }
+        }
+
+        private void ConfigureConnectionApproval()
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null)
+            {
+                return;
+            }
+
+            if (networkManager.IsListening)
+            {
+                throw new InvalidOperationException("The match manager must configure player spawning before the NetworkManager starts.");
+            }
+
+            if (networkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority)
+            {
+                networkManager.NetworkConfig.AutoSpawnPlayerPrefabClientSide = false;
+                _isPlayerSpawnConfigured = true;
+                return;
+            }
+
+            networkManager.NetworkConfig.ConnectionApproval = true;
+            networkManager.ConnectionApprovalCallback = OnServerConnectionApproval;
+            _isPlayerSpawnConfigured = true;
+        }
+
+        private void OnServerConnectionApproval(
+            NetworkManager.ConnectionApprovalRequest request,
+            NetworkManager.ConnectionApprovalResponse response
+        )
+        {
+            // If network topology is distributed authority, the server does not approve connections here.
+            // In that case, we simply return without approving the connection.
+            // The player is spawned by the client on SpawnPlayerOnConnected if authority is distributed.
+            if (NetworkManager.Singleton.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority)
+            {
+                return;
+            }
+
+            response.Approved = true;
+            response.CreatePlayerObject = true;
+
+            (Vector3 position, Quaternion rotation) spawn = GenerateSpawnPosition(request.ClientNetworkId);
+            response.Position = spawn.position;
+            response.Rotation = spawn.rotation;
+        }
+
+        private void SpawnPlayerOnConnected(ulong clientId)
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null || networkManager.LocalClient == null)
+            {
+                return;
+            }
+
+            // Client-server spawns the player during connection approval. Only distributed authority spawns it here.
+            if (networkManager.NetworkConfig.NetworkTopology != NetworkTopologyTypes.DistributedAuthority)
+            {
+                return;
+            }
+
+            // The callback also fires for other clients, and Start() may replay it for the local client.
+            if (clientId != networkManager.LocalClientId || _isLocalPlayerSpawned || networkManager.LocalClient.PlayerObject != null)
+            {
+                return;
+            }
+
+            GameObject playerPrefab = networkManager.NetworkConfig.PlayerPrefab;
+            if (playerPrefab == null || playerPrefab.TryGetComponent(out NetworkObject _) == false)
+            {
+                throw new Exception($"A player prefab with a {nameof(NetworkObject)} component must be assigned in the {nameof(NetworkManager)}.");
+            }
+
+            if (playerPrefab.TryGetComponent(out JUPlayerPropertiesBase _) == false)
+            {
+                throw new Exception($"A player prefab with a {nameof(JUPlayerPropertiesBase)} component must be assigned in the {nameof(NetworkManager)}.");
+            }
+
+            (Vector3 position, Quaternion rotation) spawn = GenerateSpawnPosition(clientId);
+            GameObject player = Instantiate(playerPrefab, spawn.position, spawn.rotation);
+            player.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
+            _isLocalPlayerSpawned = true;
         }
 
         /// <summary>
@@ -432,44 +557,91 @@ namespace JU.TPS.Netcode
             throw new Exception($"Missing implementation for {nameof(UnsubscribeOnPlayerLeft)} on {GetType().Name}");
         }
 
-        /// <summary>
-        /// Called when a client connects to the network.
-        /// </summary>
-        protected virtual void OnClientConnected(ulong clientId)
-        {
-        }
-
-        /// <summary>
-        /// Called when a client disconnects from the network.
-        /// </summary>
-        protected virtual void OnClientDisconnected(ulong clientId)
-        {
-        }
-
         protected virtual void OnEditorExitPlayMode()
         {
         }
 
         /// <summary>
         /// Leaves <see cref="CurrentSession"/> if one exists.
+        /// parameter <paramref name="onLeft"/> is invoked after leaving the session.
         /// </summary>
-        protected async void LeaveCurrentSession()
+        protected async void LeaveCurrentSession(UnityAction<bool> onLeft = null)
         {
-            ISession session = CurrentSession;
-            if (session == null)
+            if (_isLeavingSession)
             {
+                onLeft?.Invoke(false);
                 return;
             }
 
+            ISession session = CurrentSession;
             CurrentSession = null;
+
+            // The session may have been joined by a request still in flight, so fall back to the service's own list.
+            if (session == null)
+            {
+                try
+                {
+                    foreach (ISession activeSession in MultiplayerService.Instance.Sessions.Values)
+                    {
+                        session = activeSession;
+                        break;
+                    }
+                }
+                catch (Exception)
+                {
+                    // Services are already shut down, nothing left to leave.
+                }
+            }
+
+            if (session == null)
+            {
+                onLeft?.Invoke(false);
+                return;
+            }
+
+            _isLeavingSession = true;
             try
             {
                 await session.LeaveAsync();
+                onLeft?.Invoke(true);
+            }
+            catch (ObjectDisposedException)
+            {
+                // The multiplayer service already disposed the session, can happen when exiting play mode.
+                onLeft?.Invoke(false);
             }
             catch (SessionException e)
             {
-                Debug.LogWarning($"Failed to leave session: {e.Message}");
+                Debug.LogError($"Failed to leave session: {e.Message}");
+                onLeft?.Invoke(false);
             }
+            finally
+            {
+                _isLeavingSession = false;
+            }
+
+            if (NetworkManager.Singleton)
+            {
+                NetworkManager.Singleton.Shutdown();
+            }
+        }
+
+        private bool TryQuit()
+        {
+            if (_isLeavingSession)
+            {
+                return false;
+            }
+
+            LeaveCurrentSession(success =>
+            {
+                if (success)
+                {
+                    Application.Quit();
+                }
+            });
+
+            return CurrentSession == null && _isLeavingSession == false;
         }
 
         /// <summary>
@@ -502,6 +674,16 @@ namespace JU.TPS.Netcode
             }
         }
 
+        /// <summary>
+        /// Generates a spawn position for the given player properties.
+        /// </summary>
+        /// <param name="ownerClientId">The client ID that owns the player object.</param>
+        /// <returns>A tuple containing the spawn position and rotation.</returns>
+        internal virtual (Vector3 position, Quaternion rotation) GenerateSpawnPosition(ulong ownerClientId)
+        {
+            throw new NotImplementedException($"Missing implementation for {nameof(GenerateSpawnPosition)} in {GetType().Name}");
+        }
+
 #if UNITY_EDITOR
         private void OnPlayModeChanged(UnityEditor.PlayModeStateChange state)
         {
@@ -527,7 +709,7 @@ namespace JU.TPS.Netcode
     /// <typeparam name="TManager">Concrete manager type (the deriving class itself).</typeparam>
     /// <typeparam name="TMatchSettings">Settings type used to start the match.</typeparam>
     /// <typeparam name="TPlayerProperties">Player properties type spawned for each player.</typeparam>
-    public abstract class JUNetcodeMatchManagerBaseT<
+    public abstract class JUNetcodeMatchManagerBase<
         // Concrete manager type (the deriving class itself).
         TManager,
         // Settings type used to start the match.
@@ -535,7 +717,7 @@ namespace JU.TPS.Netcode
         // Player properties type spawned for each player.
         TPlayerProperties
     > : JUNetcodeMatchManagerBase
-    where TManager : JUNetcodeMatchManagerBaseT<
+    where TManager : JUNetcodeMatchManagerBase<
         TManager,
         TMatchSettings,
         TPlayerProperties
@@ -627,10 +809,10 @@ namespace JU.TPS.Netcode
             get => StartMatchSettings;
         }
 
-        protected JUNetcodeMatchManagerBaseT()
+        protected JUNetcodeMatchManagerBase()
         {
-            _playerProperties = new Dictionary<ulong, TPlayerProperties>();
-            _netPlayers = new NetworkList<NetworkBehaviourReference>(null, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+            _playerProperties = new();
+            _netPlayers = new(null, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         }
 
         /// <inheritdoc/>
@@ -681,12 +863,27 @@ namespace JU.TPS.Netcode
             }
         }
 
+        protected override void OnApplicationQuit()
+        {
+            base.OnApplicationQuit();
+            if (CurrentSession != null)
+            {
+                LeaveCurrentSession();
+                return;
+            }
+        }
+
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+            LeaveCurrentSession();
+        }
+
         public override void OnDestroy()
         {
             base.OnDestroy();
             JUPlayerPropertiesBase<TManager, TPlayerProperties>.OnPlayerSpawned -= OnPlayerPropertiesSpawned;
             JUPlayerPropertiesBase<TManager, TPlayerProperties>.OnPlayerDespawned -= OnPlayerPropertiesDespawned;
-            LeaveCurrentSession();
         }
 
         /// <summary>
@@ -754,10 +951,7 @@ namespace JU.TPS.Netcode
             throw new NotImplementedException($"Missing implementation for {nameof(CreateMatch)} on {GetType().Name}");
         }
 
-        /// <summary>
-        /// Called when a player has spawned.
-        /// </summary>
-        protected virtual void OnPlayerSpawned(TPlayerProperties playerProperties)
+        private void OnPlayerSpawned(TPlayerProperties playerProperties)
         {
             if (IsOwner == true)
             {
@@ -770,12 +964,10 @@ namespace JU.TPS.Netcode
             _playerSpawned?.Invoke(playerProperties);
         }
 
-        /// <summary>
-        /// Called when a player has left.
-        /// </summary>
-        protected virtual void OnPlayerLeft(TPlayerProperties playerProperties)
+        private void OnPlayerLeft(TPlayerProperties playerProperties)
         {
-            if (IsOwner == true)
+            // The list is unusable once the manager itself is despawned (e.g. on shutdown).
+            if (IsSpawned == true && IsOwner == true)
             {
                 _netPlayers.Remove(playerProperties);
             }
@@ -823,7 +1015,7 @@ namespace JU.TPS.Netcode
                 {
                     // A unique profile gives each running instance its own anonymous player ID,
                     // otherwise instances on the same machine share the cached identity.
-                    InitializationOptions options = new InitializationOptions().SetProfile(System.Guid.NewGuid().ToString("N").Substring(0, 30));
+                    InitializationOptions options = new InitializationOptions().SetProfile(Guid.NewGuid().ToString("N").Substring(0, 30));
                     await UnityServices.InitializeAsync(options);
                     DebugMatchLog("Unity Services initialized.");
                 }
@@ -858,7 +1050,7 @@ namespace JU.TPS.Netcode
                 return;
             }
 
-            _debugMatchSettings.PlayerName = $"Anonymous_{System.Guid.NewGuid().ToString("N").Substring(0, 4)}";
+            _debugMatchSettings.PlayerName = $"Anonymous_{Guid.NewGuid().ToString("N").Substring(0, 4)}";
 
             StartMatchSettings = _debugMatchSettings;
             CreateMatch(StartMatchSettings);
