@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Netcode;
+using Unity.Netcode.Components;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Multiplayer;
@@ -54,7 +55,12 @@ namespace JU.TPS.Netcode
     /// </summary>
     public abstract class JUPlayerPropertiesBase : NetworkBehaviour
     {
+        private static bool _setupDone;
+
         private (Vector3 position, Quaternion rotation)? _spawnTransform;
+
+        private static event UnityAction<JUPlayerPropertiesBase> _onPlayerSpawned;
+        private static event UnityAction<JUPlayerPropertiesBase> _onPlayerDespawned;
 
         private IHealth _health;
         private NetworkVariable<FixedString64Bytes> _netPlayerName;
@@ -68,6 +74,22 @@ namespace JU.TPS.Netcode
         /// Collider attached to this GameObject, if any.
         /// </summary>
         public Collider Collider { get; private set; }
+
+        /// <summary>
+        /// The health component attached to this player, if any.
+        /// </summary>
+        public IHealth Health
+        {
+            get
+            {
+                if (_health == null)
+                {
+                    _health = GetComponent<IHealth>();
+                }
+
+                return _health;
+            }
+        }
 
         /// <summary>
         /// Maximum health, or zero if there is no <see cref="IHealth"/> component.
@@ -88,7 +110,7 @@ namespace JU.TPS.Netcode
         /// <summary>
         /// Current health, or zero if there is no <see cref="IHealth"/> component.
         /// </summary>
-        public float Health
+        public float HealthValue
         {
             get
             {
@@ -200,6 +222,11 @@ namespace JU.TPS.Netcode
         /// </summary>
         protected virtual void Awake()
         {
+            if (_setupDone == false)
+            {
+                _setupDone = true;
+                Application.quitting += Cleanup;
+            }
         }
 
         /// <summary>
@@ -238,6 +265,18 @@ namespace JU.TPS.Netcode
             }
 
             PlayerName = _netPlayerName.Value.ToString();
+
+            StartCoroutine(WaitForSpawned(() =>
+            {
+                _onPlayerSpawned?.Invoke(this);
+            }));
+        }
+
+        /// <inheritdoc/>
+        public override void OnNetworkDespawn()
+        {
+            base.OnNetworkDespawn();
+            _onPlayerDespawned?.Invoke(this);
         }
 
         private void OnPlayerNameChanged(FixedString64Bytes oldValue, FixedString64Bytes newValue)
@@ -249,11 +288,63 @@ namespace JU.TPS.Netcode
 
             PlayerName = newValue.ToString();
         }
+
+        protected IEnumerator WaitForSpawned(UnityAction onSpawned)
+        {
+            while (IsSpawned == false)
+            {
+                yield return null;
+            }
+
+            onSpawned?.Invoke();
+        }
+
+        private void Cleanup()
+        {
+            _onPlayerSpawned = null;
+            _onPlayerDespawned = null;
+        }
+
+        /// <summary>
+        /// Subscribes to the event raised when a player is spawned in the network.
+        /// </summary>
+        /// <param name="callback"></param>
+        public static void SubscribeOnPlayerSpawned(UnityAction<JUPlayerPropertiesBase> callback)
+        {
+            _onPlayerSpawned += callback;
+        }
+
+        /// <summary>
+        /// Unsubscribes from the event raised when a player is spawned in the network.
+        /// </summary>
+        /// <param name="callback"></param>
+        public static void UnsubscribeOnPlayerSpawned(UnityAction<JUPlayerPropertiesBase> callback)
+        {
+            _onPlayerSpawned -= callback;
+        }
+
+        /// <summary>
+        /// Subscribes to the event raised when a player is despawned in the network.
+        /// </summary>
+        /// <param name="callback"></param>
+        public static void SubscribeOnPlayerDespawned(UnityAction<JUPlayerPropertiesBase> callback)
+        {
+            _onPlayerDespawned += callback;
+        }
+
+        /// <summary>
+        /// Unsubscribes from the event raised when a player is despawned in the network.
+        /// </summary>
+        /// <param name="callback"></param>
+        public static void UnsubscribeOnPlayerDespawned(UnityAction<JUPlayerPropertiesBase> callback)
+        {
+            _onPlayerDespawned -= callback;
+        }
     }
 
     /// <summary>
     /// <see cref="JUPlayerPropertiesBase"/> bound to a match manager and a concrete player type.
-    /// Raises <see cref="OnPlayerSpawned"/> and <see cref="OnPlayerDespawned"/> for the manager.
+    /// Raises <see cref="_onPlayerSpawned"/> and <see cref="_onPlayerDespawned"/> for the manager.
     /// </summary>
     /// <typeparam name="TManager">Match manager type that owns these players.</typeparam>
     /// <typeparam name="TPlayerProperties">Concrete player properties type (the deriving class itself).</typeparam>
@@ -266,15 +357,8 @@ namespace JU.TPS.Netcode
     where TManager : JUNetcodeMatchManagerBase
     where TPlayerProperties : JUPlayerPropertiesBase<TManager, TPlayerProperties>
     {
-        /// <summary>
-        /// Raised when a player is spawned on the network.
-        /// </summary>
-        public static event UnityAction<TPlayerProperties> OnPlayerSpawned;
-
-        /// <summary>
-        /// Raised when a player is despawned from the network.
-        /// </summary>
-        public static event UnityAction<TPlayerProperties> OnPlayerDespawned;
+        private static event UnityAction<TPlayerProperties> _onPlayerSpawned;
+        private static event UnityAction<TPlayerProperties> _onPlayerDespawned;
 
         /// <summary>
         /// Active match manager.
@@ -284,32 +368,62 @@ namespace JU.TPS.Netcode
             get => (TManager)JUNetcodeMatchManagerBase.RawInstance;
         }
 
+        protected override void Awake()
+        {
+            base.Awake();
+        }
+
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
             StartCoroutine(WaitForSpawned(() =>
             {
-                OnPlayerSpawned?.Invoke((TPlayerProperties)this);
-                Debug.Log("player spawned");
+                _onPlayerSpawned?.Invoke((TPlayerProperties)this);
             }));
         }
 
         /// <inheritdoc/>
         public override void OnNetworkDespawn()
         {
+            _onPlayerDespawned?.Invoke((TPlayerProperties)this);
             base.OnNetworkDespawn();
-            OnPlayerDespawned?.Invoke((TPlayerProperties)this);
         }
 
-        private IEnumerator WaitForSpawned(UnityAction onSpawned)
+        /// <summary>
+        /// Subscribes to the event raised when a player is spawned on the network.
+        /// </summary>
+        /// <param name="callback"></param>
+        public static void SubscribeOnPlayerSpawned(UnityAction<TPlayerProperties> callback)
         {
-            while (IsSpawned == false)
-            {
-                yield return null;
-            }
+            _onPlayerSpawned += callback;
+        }
 
-            onSpawned?.Invoke();
+        /// <summary>
+        /// Unsubscribes from the event raised when a player is spawned on the network.
+        /// </summary>
+        /// <param name="callback"></param>
+        public static void UnsubscribeOnPlayerSpawned(UnityAction<TPlayerProperties> callback)
+        {
+            _onPlayerSpawned -= callback;
+        }
+
+        /// <summary>
+        /// Subscribes to the event raised when a player is despawned from the network.
+        /// </summary>
+        /// <param name="callback"></param>
+        public static void SubscribeOnPlayerDespawned(UnityAction<TPlayerProperties> callback)
+        {
+            _onPlayerDespawned += callback;
+        }
+
+        /// <summary>
+        /// Unsubscribes from the event raised when a player is despawned from the network.
+        /// </summary>
+        /// <param name="callback"></param>
+        public static void UnsubscribeOnPlayerDespawned(UnityAction<TPlayerProperties> callback)
+        {
+            _onPlayerDespawned -= callback;
         }
     }
 
@@ -318,12 +432,63 @@ namespace JU.TPS.Netcode
     /// </summary>
     public abstract class JUNetcodeMatchManagerBase : NetworkBehaviour
     {
+        [Serializable]
+        public struct RespawnSettings
+        {
+            [Tooltip("If true, the player will respawn after being eliminated.")]
+            [SerializeField]
+            private bool _enabled;
+
+            [Tooltip("Time it takes for the player to respawn.")]
+            [SerializeField]
+            [Min(0f)]
+            private float _respawnTime;
+
+            [Tooltip("Time it takes for the player to be able to respawn.")]
+            [SerializeField]
+            [Min(0f)]
+            private float _enableRespawnTime;
+
+            /// <summary>
+            /// If true, the player will respawn after being eliminated.
+            /// </summary>
+            public bool Enabled
+            {
+                get => _enabled;
+            }
+
+            /// <summary>
+            /// Time it takes for the player to respawn.
+            /// </summary>
+            public float RespawnTime
+            {
+                get => _respawnTime;
+            }
+
+            /// <summary>
+            /// Time it takes for the player to be able to respawn.
+            /// </summary>
+            public float EnableRespawnTime
+            {
+                get => _enableRespawnTime;
+            }
+
+            public RespawnSettings(bool enabled, float respawnTime, float enableRespawnTime)
+            {
+                _enabled = enabled;
+                _respawnTime = respawnTime;
+                _enableRespawnTime = enableRespawnTime;
+            }
+        }
+
         private static bool _setupDone;
 
         private static JUNetcodeMatchManagerBase _rawInstance;
         private bool _isPlayerSpawnConfigured;
         private bool _isLocalPlayerSpawned;
         private bool _isLeavingSession;
+
+        [SerializeField] private RespawnSettings _respawnSettings;
 
         /// <summary>
         /// Raised when the local player creates or joins a session.
@@ -352,6 +517,37 @@ namespace JU.TPS.Netcode
         public ISession CurrentSession { get; private set; }
 
         /// <summary>
+        /// Local player properties.
+        /// </summary>
+        public JUPlayerPropertiesBase RawLocalPlayer { get; private set; }
+
+        /// <summary>
+        /// If true, the player will respawn after <see cref="LocalPlayerEnableRespawnTimer"/> reaches zero.
+        /// </summary>
+        public bool LocalPlayerRespawnTriggered { get; protected set; }
+
+        /// <summary>
+        /// Time remaining until the local player respawns.
+        /// </summary>
+        public float LocalPlayerRespawnTimer { get; protected set; }
+
+        /// <summary>
+        /// Time remaining until the local player *can* respawn.
+        /// It does not respawn the player automatically. Just allow the player to respawn when the timer reaches zero.
+        /// </summary>
+        public float LocalPlayerEnableRespawnTimer { get; protected set; }
+
+        /// <summary>
+        /// Respawn settings for the local player.
+        /// </summary>
+        public RespawnSettings Respawn
+        {
+            get => _respawnSettings;
+            protected set => _respawnSettings = value;
+        }
+
+
+        /// <summary>
         /// Number of players in the match.
         /// </summary>
         public virtual int PlayersCount
@@ -371,6 +567,15 @@ namespace JU.TPS.Netcode
             {
                 throw new NotImplementedException($"Missing implementation for {nameof(RawMatchSettings)} property in {GetType().Name}");
             }
+        }
+
+        protected virtual void Reset()
+        {
+            Respawn = new RespawnSettings(
+                enabled: true,
+                respawnTime: 3f,
+                enableRespawnTime: 3f
+            );
         }
 
         protected virtual void Awake()
@@ -394,6 +599,26 @@ namespace JU.TPS.Netcode
             Debug.Assert(_rawInstance == this, $"Another Match Manager ({_rawInstance.name} of type {_rawInstance.GetType().Name}) already exists. Multiple instances are not allowed.");
 
             ConfigureConnectionApproval();
+
+            JUPlayerPropertiesBase.SubscribeOnPlayerSpawned(OnPlayerSpawned);
+            JUPlayerPropertiesBase.SubscribeOnPlayerDespawned(OnPlayerDespawned);
+        }
+
+        /// <inheritdoc/>
+        public override void OnDestroy()
+        {
+            _rawInstance = null;
+            Application.wantsToQuit -= TryQuit;
+
+            base.OnDestroy();
+
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.OnClientConnectedCallback -= SpawnPlayerOnConnected;
+            }
+
+            JUPlayerPropertiesBase.UnsubscribeOnPlayerSpawned(OnPlayerSpawned);
+            JUPlayerPropertiesBase.UnsubscribeOnPlayerDespawned(OnPlayerDespawned);
         }
 
         protected virtual void OnEnable()
@@ -427,18 +652,26 @@ namespace JU.TPS.Netcode
 
         protected virtual void Update()
         {
-        }
-
-        public override void OnDestroy()
-        {
-            _rawInstance = null;
-            Application.wantsToQuit -= TryQuit;
-
-            base.OnDestroy();
-
-            if (NetworkManager.Singleton != null)
+            if (IsSpawned == false)
             {
-                NetworkManager.Singleton.OnClientConnectedCallback -= SpawnPlayerOnConnected;
+                return;
+            }
+
+            if (RawLocalPlayer != null && RawLocalPlayer.Health != null && RawLocalPlayer.Health.IsDead == true)
+            {
+                LocalPlayerEnableRespawnTimer -= Time.deltaTime;
+                LocalPlayerEnableRespawnTimer = Mathf.Max(LocalPlayerEnableRespawnTimer, 0f);
+
+                if (LocalPlayerRespawnTriggered)
+                {
+                    LocalPlayerRespawnTimer -= Time.deltaTime;
+                    LocalPlayerRespawnTimer = Mathf.Max(LocalPlayerRespawnTimer, 0f);
+
+                    if (LocalPlayerRespawnTimer == 0f)
+                    {
+                        RespawnLocalPlayerNow();
+                    }
+                }
             }
         }
 
@@ -525,6 +758,22 @@ namespace JU.TPS.Netcode
             _isLocalPlayerSpawned = true;
         }
 
+        private void OnPlayerSpawned(JUPlayerPropertiesBase playerProperties)
+        {
+            if (playerProperties.IsLocalPlayer == true)
+            {
+                RawLocalPlayer = playerProperties;
+            }
+        }
+
+        private void OnPlayerDespawned(JUPlayerPropertiesBase playerProperties)
+        {
+            if (playerProperties.IsLocalPlayer == true)
+            {
+                RawLocalPlayer = null;
+            }
+        }
+
         /// <summary>
         /// Subscribes to the event raised when a player spawns.
         /// </summary>
@@ -555,6 +804,61 @@ namespace JU.TPS.Netcode
         public virtual void UnsubscribeOnPlayerLeft(UnityAction<JUPlayerPropertiesBase> callback)
         {
             throw new Exception($"Missing implementation for {nameof(UnsubscribeOnPlayerLeft)} on {GetType().Name}");
+        }
+
+        /// <summary>
+        /// Subscribes to the event raised when a player takes damage.
+        /// </summary>
+        /// <param name="callback">The callback to invoke when a player takes damage.</param>
+        public virtual void SubscribeOnPlayerTakeDamage(UnityAction<(JUPlayerPropertiesBase player, IHealth.DamageResultInfo damageInfo)> callback)
+        {
+            throw new Exception($"Missing implementation for {nameof(SubscribeOnPlayerTakeDamage)} on {GetType().Name}");
+        }
+
+        /// <summary>
+        /// Unsubscribes from the event raised when a player takes damage.
+        /// </summary>
+        /// <param name="callback"></param>
+        /// <exception cref="Exception"></exception>
+        public virtual void UnsubscribeOnPlayerTakeDamage(UnityAction<(JUPlayerPropertiesBase player, IHealth.DamageResultInfo damageInfo)> callback)
+        {
+            throw new Exception($"Missing implementation for {nameof(UnsubscribeOnPlayerTakeDamage)} on {GetType().Name}");
+        }
+
+        /// <summary>
+        /// Subscribes to the event raised when a player dies.
+        /// </summary>
+        /// <param name="callback">The callback to invoke when a player dies.</param>
+        public virtual void SubscribeOnPlayerDie(UnityAction<JUPlayerPropertiesBase> callback)
+        {
+            throw new Exception($"Missing implementation for {nameof(SubscribeOnPlayerDie)} on {GetType().Name}");
+        }
+
+        /// <summary>
+        /// Unsubscribes from the event raised when a player dies.
+        /// </summary>
+        /// <param name="callback">The callback to invoke when a player dies.</param>
+        public virtual void UnsubscribeOnPlayerDie(UnityAction<JUPlayerPropertiesBase> callback)
+        {
+            throw new Exception($"Missing implementation for {nameof(UnsubscribeOnPlayerDie)} on {GetType().Name}");
+        }
+
+        /// <summary>
+        /// Subscribes to the event raised when a player respawns.
+        /// </summary>
+        /// <param name="callback">The callback to invoke when a player respawns.</param>
+        public virtual void SubscribeOnPlayerRespawn(UnityAction<JUPlayerPropertiesBase> callback)
+        {
+            throw new Exception($"Missing implementation for {nameof(SubscribeOnPlayerRespawn)} on {GetType().Name}");
+        }
+
+        /// <summary>
+        /// Unsubscribes from the event raised when a player respawns.
+        /// </summary>
+        /// <param name="callback">The callback to invoke when a player respawns.</param>
+        public virtual void UnsubscribeOnPlayerRespawn(UnityAction<JUPlayerPropertiesBase> callback)
+        {
+            throw new Exception($"Missing implementation for {nameof(UnsubscribeOnPlayerRespawn)} on {GetType().Name}");
         }
 
         protected virtual void OnEditorExitPlayMode()
@@ -626,22 +930,16 @@ namespace JU.TPS.Netcode
             }
         }
 
-        private bool TryQuit()
+        /// <summary>
+        /// Respawns the local player immediately by resetting their health.
+        /// </summary>
+        public void RespawnLocalPlayerNow()
         {
-            if (_isLeavingSession)
-            {
-                return false;
-            }
+            IHealth playerHealth = RawLocalPlayer.Health;
+            Debug.Assert(playerHealth != null, $"Player {RawLocalPlayer.name} health component is missing.");
+            Debug.Assert(playerHealth.IsDead, $"Player {RawLocalPlayer.name} is not dead and cannot respawn.");
 
-            LeaveCurrentSession(success =>
-            {
-                if (success)
-                {
-                    Application.Quit();
-                }
-            });
-
-            return CurrentSession == null && _isLeavingSession == false;
+            playerHealth.ResetHealth();
         }
 
         /// <summary>
@@ -674,6 +972,17 @@ namespace JU.TPS.Netcode
             }
         }
 
+        public bool TryTriggerRespawn()
+        {
+            if (LocalPlayerEnableRespawnTimer > 0)
+            {
+                return false;
+            }
+
+            LocalPlayerRespawnTriggered = true;
+            return true;
+        }
+
         /// <summary>
         /// Generates a spawn position for the given player properties.
         /// </summary>
@@ -682,6 +991,24 @@ namespace JU.TPS.Netcode
         internal virtual (Vector3 position, Quaternion rotation) GenerateSpawnPosition(ulong ownerClientId)
         {
             throw new NotImplementedException($"Missing implementation for {nameof(GenerateSpawnPosition)} in {GetType().Name}");
+        }
+
+        private bool TryQuit()
+        {
+            if (_isLeavingSession)
+            {
+                return false;
+            }
+
+            LeaveCurrentSession(success =>
+            {
+                if (success)
+                {
+                    Application.Quit();
+                }
+            });
+
+            return CurrentSession == null && _isLeavingSession == false;
         }
 
 #if UNITY_EDITOR
@@ -737,6 +1064,12 @@ namespace JU.TPS.Netcode
         private event UnityAction<JUPlayerPropertiesBase> _playerSpawned;
         private event UnityAction<JUPlayerPropertiesBase> _playerLeft;
 
+        private event UnityAction<(JUPlayerPropertiesBase player, IHealth.DamageResultInfo damageInfo)> _playerTakeDamage;
+        private event UnityAction<JUPlayerPropertiesBase> _playerDie;
+
+        private event UnityAction<JUPlayerPropertiesBase> _playerRespawn;
+        private event UnityAction<TPlayerProperties> _playerRespawnT;
+
         /// <summary>
         /// Settings used when no match was configured before the scene loaded. Only used for debugging.
         /// </summary>
@@ -790,6 +1123,14 @@ namespace JU.TPS.Netcode
         }
 
         /// <summary>
+        /// Local player properties casted to <typeparamref name="TPlayerProperties"/>.
+        /// </summary>
+        public TPlayerProperties PlayerProperties
+        {
+            get => (TPlayerProperties)RawLocalPlayer;
+        }
+
+        /// <summary>
         /// Players spawned in the match.
         /// </summary>
         public IEnumerable<TPlayerProperties> Players
@@ -829,8 +1170,13 @@ namespace JU.TPS.Netcode
                 Destroy(gameObject);
             }
 
-            JUPlayerPropertiesBase<TManager, TPlayerProperties>.OnPlayerSpawned += OnPlayerPropertiesSpawned;
-            JUPlayerPropertiesBase<TManager, TPlayerProperties>.OnPlayerDespawned += OnPlayerPropertiesDespawned;
+            _playerRespawnT += player =>
+            {
+                _playerRespawn?.Invoke(player);
+            };
+
+            JUPlayerPropertiesBase<TManager, TPlayerProperties>.SubscribeOnPlayerSpawned(OnPlayerPropertiesSpawned);
+            JUPlayerPropertiesBase<TManager, TPlayerProperties>.SubscribeOnPlayerDespawned(OnPlayerPropertiesDespawned);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (StartMatchSettings == null)
@@ -854,7 +1200,6 @@ namespace JU.TPS.Netcode
                     return;
                 }
 
-                Debug.Log("Starting real game match.");
                 CreateMatch(StartMatchSettings);
             }
             else
@@ -882,8 +1227,8 @@ namespace JU.TPS.Netcode
         public override void OnDestroy()
         {
             base.OnDestroy();
-            JUPlayerPropertiesBase<TManager, TPlayerProperties>.OnPlayerSpawned -= OnPlayerPropertiesSpawned;
-            JUPlayerPropertiesBase<TManager, TPlayerProperties>.OnPlayerDespawned -= OnPlayerPropertiesDespawned;
+            JUPlayerPropertiesBase<TManager, TPlayerProperties>.UnsubscribeOnPlayerSpawned(OnPlayerPropertiesSpawned);
+            JUPlayerPropertiesBase<TManager, TPlayerProperties>.UnsubscribeOnPlayerDespawned(OnPlayerPropertiesDespawned);
         }
 
         /// <summary>
@@ -942,6 +1287,60 @@ namespace JU.TPS.Netcode
             _playerLeft -= callback;
         }
 
+        /// <inheritdoc/>
+        public override void SubscribeOnPlayerTakeDamage(UnityAction<(JUPlayerPropertiesBase player, IHealth.DamageResultInfo damageInfo)> callback)
+        {
+            _playerTakeDamage += callback;
+        }
+
+        /// <inheritdoc/>
+        public override void UnsubscribeOnPlayerTakeDamage(UnityAction<(JUPlayerPropertiesBase player, IHealth.DamageResultInfo damageInfo)> callback)
+        {
+            _playerTakeDamage -= callback;
+        }
+
+        /// <inheritdoc/>
+        public override void SubscribeOnPlayerDie(UnityAction<JUPlayerPropertiesBase> callback)
+        {
+            _playerDie += callback;
+        }
+
+        /// <inheritdoc/>
+        public override void UnsubscribeOnPlayerDie(UnityAction<JUPlayerPropertiesBase> callback)
+        {
+            _playerDie -= callback;
+        }
+
+        /// <inheritdoc/>
+        public override void SubscribeOnPlayerRespawn(UnityAction<JUPlayerPropertiesBase> callback)
+        {
+            _playerRespawn += callback;
+        }
+
+        /// <inheritdoc/>
+        public override void UnsubscribeOnPlayerRespawn(UnityAction<JUPlayerPropertiesBase> callback)
+        {
+            _playerRespawn -= callback;
+        }
+
+        /// <summary>
+        /// Subscribes to the event raised when a player respawns.
+        /// </summary>
+        /// <param name="callback"></param>
+        public void SubscribeOnPlayerRespawn(UnityAction<TPlayerProperties> callback)
+        {
+            _playerRespawnT += callback;
+        }
+
+        /// <summary>
+        /// Unsubscribes from the event raised when a player respawns.
+        /// </summary>
+        /// <param name="callback"></param>
+        public void UnsubscribeOnPlayerRespawn(UnityAction<TPlayerProperties> callback)
+        {
+            _playerRespawnT -= callback;
+        }
+
         /// <summary>
         /// Starts the match. Implement it to create or join the session for the mode.
         /// </summary>
@@ -959,6 +1358,50 @@ namespace JU.TPS.Netcode
             }
 
             _playerProperties[playerProperties.NetworkObjectId] = playerProperties;
+
+            if (playerProperties.gameObject.TryGetComponent(out IHealth health))
+            {
+                health.OnDamaged += (damageInfo) =>
+                {
+                    _playerTakeDamage?.Invoke((playerProperties, damageInfo));
+                };
+
+                health.OnDeath += () =>
+                {
+                    LocalPlayerEnableRespawnTimer = Respawn.RespawnTime;
+                    LocalPlayerRespawnTimer = Respawn.RespawnTime;
+                    LocalPlayerRespawnTriggered = false;
+                    _playerDie?.Invoke(playerProperties);
+                };
+
+                // Respawn.
+                health.OnResetHealth += () =>
+                {
+                    NetworkTransform playerNetTransform = playerProperties.gameObject.GetComponent<NetworkTransform>();
+                    Debug.Assert(playerNetTransform != null, $"Player {name} {nameof(NetworkTransform)} component is missing.");
+                    (Vector3 position, Quaternion rotation) spawn = playerProperties.Spawn;
+
+                    if (playerProperties.IsOwner == true)
+                    {
+                        // Reset the physics pose before committing the teleport to NetworkTransform.
+                        if (playerProperties.TryGetComponent(out Rigidbody playerRigidbody))
+                        {
+                            playerRigidbody.position = spawn.position;
+                            playerRigidbody.rotation = spawn.rotation;
+                            playerRigidbody.linearVelocity = Vector3.zero;
+                            playerRigidbody.angularVelocity = Vector3.zero;
+                        }
+
+                        playerNetTransform.SetState(
+                            posIn: spawn.position,
+                            rotIn: spawn.rotation,
+                            teleportDisabled: false
+                        );
+                    }
+
+                    _playerRespawnT?.Invoke(playerProperties);
+                };
+            }
 
             _playerSpawnedT?.Invoke(playerProperties);
             _playerSpawned?.Invoke(playerProperties);

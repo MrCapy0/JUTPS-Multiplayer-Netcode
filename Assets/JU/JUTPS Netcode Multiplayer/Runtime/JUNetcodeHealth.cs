@@ -115,6 +115,7 @@ namespace JU.TPS.Netcode
 
         private IHealth _health;
         private bool _isSyncing;
+        private bool _healthReseted;
         private bool _healthReceived;
         private bool _maxHealthReceived;
 
@@ -234,6 +235,16 @@ namespace JU.TPS.Netcode
                 return;
             }
 
+            if (_healthReseted == true)
+            {
+                if (_netHealth.Value <= 0f)
+                {
+                    return;
+                }
+
+                _healthReseted = false;
+            }
+
             _isSyncing = true;
 
             Health.Protection = 0;
@@ -310,6 +321,11 @@ namespace JU.TPS.Netcode
 
         private void OnResetHealth()
         {
+            if (_isSyncing == true)
+            {
+                return;
+            }
+
             if (IsOwner == false)
             {
                 ResetHealthOwnerRpc();
@@ -335,7 +351,16 @@ namespace JU.TPS.Netcode
                 return;
             }
 
-            Health.ResetHealth();
+            _healthReseted = _netHealth.Value <= 0f;
+            _isSyncing = true;
+            try
+            {
+                Health.ResetHealth();
+            }
+            finally
+            {
+                _isSyncing = false;
+            }
         }
 
         private void OnHealthAdded(IHealth.AddedHealthInfo healthAddedInfo)

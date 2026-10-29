@@ -38,8 +38,9 @@ namespace JU.TPS.Netcode
 
         public Transform[] SpawnPoints;
 
-        private void Reset()
+        protected override void Reset()
         {
+            base.Reset();
             _debugMatchSettings = new MatchSettings(
                 "Debug Session Simple Match",
                 "Player 1",

@@ -302,7 +302,6 @@ namespace JU
                 _health = 0;
                 IsRegeneratingHealth = false;
                 IsDead = true;
-
                 OnDeath?.Invoke();
             }
 

@@ -2364,8 +2364,6 @@ namespace JUTPS.CharacterBrain
             //Enable Movement
             StartCoroutine(ActiveControls());
 
-            Debug.Log("Player has respawned");
-
             IEnumerator ActiveControls()
             {
                 // Wait finish the ressurect process
