@@ -21,6 +21,10 @@ EditorBuildSettings:
     path: Assets/JU/JUTPS Netcode Multiplayer/Samples/Demos/2 TPS Random Room/TPS
       Random Room.unity
     guid: 2b1d64574298b5e4d830901830e8904f
+  - enabled: 1
+    path: Assets/JU/JUTPS Netcode Multiplayer/Samples/Demos/3 TPS Deathmach/TPS Deathmatch
+      Menu.unity
+    guid: c1d76c9dbfad7554a9e3c6f2e7171db7
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 2ec44aec0dd0a564fa6de8ea4b3c5852,
       type: 2}

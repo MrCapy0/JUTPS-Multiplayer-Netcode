@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace JU.TPS.Netcode
+namespace JU.TPS.Netcode.UI
 {
     /// <summary>
     /// World-space status indicator (player name) that follows a remote player on screen.
