@@ -25,6 +25,14 @@ EditorBuildSettings:
     path: Assets/JU/JUTPS Netcode Multiplayer/Samples/Demos/3 TPS Deathmach/TPS Deathmatch
       Menu.unity
     guid: c1d76c9dbfad7554a9e3c6f2e7171db7
+  - enabled: 1
+    path: Assets/JU/JUTPS Netcode Multiplayer/Samples/Demos/3 TPS Deathmach/TPS Deathmatch
+      Map 1.unity
+    guid: 7f11865b3acfe0e4aba5b084b231fd3f
+  - enabled: 1
+    path: Assets/JU/JUTPS Netcode Multiplayer/Samples/Demos/3 TPS Deathmach/TPS Deathmatch
+      Map 2.unity
+    guid: 40b69f5cd6845e24eb4260df39e57cdb
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 2ec44aec0dd0a564fa6de8ea4b3c5852,
       type: 2}

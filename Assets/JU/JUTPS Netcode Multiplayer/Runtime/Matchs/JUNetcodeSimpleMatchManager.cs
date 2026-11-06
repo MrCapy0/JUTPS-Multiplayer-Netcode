@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace JU.TPS.Netcode
@@ -20,19 +21,40 @@ namespace JU.TPS.Netcode
         [System.Serializable]
         public class MatchSettings : MatchSettingsBase
         {
+            private string _mapName;
+            private string _startScene;
+
             /// <summary>
             /// Maximum number of players in the session.
             /// </summary>
             [Space]
             public int MaxPlayers;
 
+            /// <inheritdoc/>
+            public override string MapName
+            {
+                get => _mapName;
+                internal set => _mapName = value;
+            }
+
+            /// <inheritdoc/>
+            public override string StartScene
+            {
+                get => _startScene;
+                internal set => _startScene = value;
+            }
+
             /// <param name="sessionName">Name of the session.</param>
             /// <param name="playerName">Name of the local player.</param>
             /// <param name="maxPlayers">Initial value of <see cref="MaxPlayers"/>.</param>
-            public MatchSettings(string sessionName, string playerName, int maxPlayers) :
+            /// <param name="mapName">Initial value of <see cref="MapName"/>.</param>
+            /// <param name="startScene">Initial value of <see cref="StartScene"/>.</param>
+            public MatchSettings(string sessionName, string playerName, int maxPlayers, string mapName = null, string startScene = null) :
             base(sessionName, playerName)
             {
                 MaxPlayers = maxPlayers;
+                _mapName = mapName;
+                _startScene = startScene;
             }
         }
 
@@ -42,9 +64,11 @@ namespace JU.TPS.Netcode
         {
             base.Reset();
             _debugMatchSettings = new MatchSettings(
-                "Debug Session Simple Match",
-                "Player 1",
-                4
+                sessionName: "Debug Session Simple Match",
+                playerName: "Player 1",
+                maxPlayers: 4,
+                mapName: $"Debug {gameObject.scene.buildIndex}",
+                startScene: gameObject.scene.name
             );
         }
 
@@ -55,9 +79,14 @@ namespace JU.TPS.Netcode
         }
 
         /// <inheritdoc/>
-        protected override void CreateMatch(MatchSettings matchSettings)
+        protected override async Task CreateMatch(MatchSettings matchSettings)
         {
-            CreateOrJoinSession(matchSettings.SessionName, matchSettings.MaxPlayers);
+            await CreateOrJoinRoom(
+                roomName: matchSettings.RoomName,
+                maxPlayers: matchSettings.MaxPlayers,
+                mapName: matchSettings.MapName,
+                startScene: matchSettings.StartScene,
+                roomPassword: matchSettings.RoomPassword);
         }
 
         private void OnPlayerSpawned(JUNetcodeSimpleMatchPlayerProperties player)

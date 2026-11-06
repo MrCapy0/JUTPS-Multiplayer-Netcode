@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Unity.Collections;
 using Unity.Netcode;
 using Unity.Netcode.Components;
@@ -18,18 +19,23 @@ namespace JU.TPS.Netcode
     [Serializable]
     public abstract class MatchSettingsBase
     {
-        [Tooltip("Name of the multiplayer session to create or join.")]
-        [SerializeField] private string _sessionName;
+        [Tooltip("Name of the multiplayer room to create or join.")]
+        [SerializeField] private string _roomName;
 
         [Tooltip("Name of the local player.")]
         [SerializeField] private string _playerName;
 
         /// <summary>
-        /// Name of the session to create or join.
+        /// Room password used to join the match.
         /// </summary>
-        public string SessionName
+        public string RoomPassword { get; private set; }
+
+        /// <summary>
+        /// Name of the room to create or join.
+        /// </summary>
+        public string RoomName
         {
-            get => _sessionName;
+            get => _roomName;
         }
 
         /// <summary>
@@ -41,12 +47,55 @@ namespace JU.TPS.Netcode
             internal set => _playerName = value;
         }
 
-        /// <param name="sessionName">Initial value of <see cref="SessionName"/>.</param>
-        /// <param name="playerName">Initial value of <see cref="PlayerName"/>.</param>
-        protected MatchSettingsBase(string sessionName, string playerName)
+        /// <summary>
+        /// Room maximum number of players.
+        /// </summary>
+        public virtual int MatchMaxPlayers
         {
-            _sessionName = sessionName;
+            get
+            {
+                throw new Exception($"Missing 'get' implementation for {nameof(MatchMaxPlayers)} on {GetType().Name}");
+            }
+        }
+
+        /// <summary>
+        /// Name of the scene to load when the match starts.
+        /// </summary>
+        public virtual string StartScene
+        {
+            get
+            {
+                throw new Exception($"Missing 'get' implementation for {nameof(StartScene)} on {GetType().Name}");
+            }
+            internal set
+            {
+                throw new Exception($"Missing 'set' implementation for {nameof(StartScene)} on {GetType().Name}");
+            }
+        }
+
+        /// <summary>
+        /// Name of the map to be displayed in the match or main menu on room list.
+        /// </summary>
+        public virtual string MapName
+        {
+            get
+            {
+                throw new Exception($"Missing 'get' implementation for {nameof(MapName)} on {GetType().Name}");
+            }
+            internal set
+            {
+                throw new Exception($"Missing 'set' implementation for {nameof(MapName)} on {GetType().Name}");
+            }
+        }
+
+        /// <param name="roomName">Initial value of <see cref="RoomName"/>.</param>
+        /// <param name="playerName">Initial value of <see cref="PlayerName"/>.</param>
+        /// <param name="sessionPassword">Initial value of <see cref="RoomPassword"/>.</param>
+        protected MatchSettingsBase(string roomName, string playerName, string sessionPassword = null)
+        {
+            _roomName = roomName;
             _playerName = playerName;
+            RoomPassword = sessionPassword;
         }
     }
 
@@ -184,7 +233,7 @@ namespace JU.TPS.Netcode
         /// </summary>
         public ISession CurrentSession
         {
-            get => JUNetcodeMatchManagerBase.RawInstance.CurrentSession;
+            get => JUNetcodeMatchManagerBase.CurrentRoom;
         }
 
         /// <summary>
@@ -481,19 +530,29 @@ namespace JU.TPS.Netcode
             }
         }
 
-        private static bool _setupDone;
+        private static bool _setupQuitApplicationDone;
+        private static bool _setupExitPlayModeDone;
 
         private static JUNetcodeMatchManagerBase _rawInstance;
         private bool _isPlayerSpawnConfigured;
         private bool _isLocalPlayerSpawned;
-        private bool _isLeavingSession;
+        private static bool _isLeavingRoom;
+        private static float _lastRoomSearchTime;
+
+        private readonly static string _roomPropertyStartScene = "startScene";
+        private readonly static string _roomPropertyMapName = "mapName";
 
         [SerializeField] private RespawnSettings _respawnSettings;
 
         /// <summary>
-        /// Raised when the local player creates or joins a session.
+        /// Raised when the local player creates or joins a room.
         /// </summary>
-        public event UnityAction<ISession> JoinSession;
+        public static event UnityAction<ISession> JoinRoom;
+
+        /// <summary>
+        /// Raised when exiting playmode in the editor.
+        /// </summary>
+        public static event UnityAction ExitingPlayMode;
 
         /// <summary>
         /// Active match manager in the scene.
@@ -512,9 +571,9 @@ namespace JU.TPS.Netcode
         }
 
         /// <summary>
-        /// Session the local player is in, or null.
+        /// Room the local player is in, or null.
         /// </summary>
-        public ISession CurrentSession { get; private set; }
+        public static ISession CurrentRoom { get; private set; }
 
         /// <summary>
         /// Local player properties.
@@ -569,6 +628,48 @@ namespace JU.TPS.Netcode
             }
         }
 
+        /// <summary>
+        /// Checks if the player is connected to Unity Services and authenticated.
+        /// </summary>
+        public static bool IsConnectedAndAuthenticated
+        {
+            get
+            {
+                if (UnityServices.Instance == null)
+                {
+                    return false;
+                }
+
+                if (UnityServices.State != ServicesInitializationState.Initialized)
+                {
+                    return false;
+                }
+
+                if (AuthenticationService.Instance == null || AuthenticationService.Instance.IsSignedIn == false)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Checks if the player can search for rooms.
+        /// </summary>
+        public static bool CanSearchRooms
+        {
+            get
+            {
+                if (IsConnectedAndAuthenticated == false)
+                {
+                    return false;
+                }
+
+                return Time.unscaledTime - _lastRoomSearchTime >= 1;
+            }
+        }
+
         protected virtual void Reset()
         {
             Respawn = new RespawnSettings(
@@ -580,16 +681,7 @@ namespace JU.TPS.Netcode
 
         protected virtual void Awake()
         {
-            Application.wantsToQuit += TryQuit;
-
-            if (_setupDone == false)
-            {
-                _setupDone = true;
-
-#if UNITY_EDITOR
-                UnityEditor.EditorApplication.playModeStateChanged += OnPlayModeChanged;
-#endif
-            }
+            SetupIfNeeded();
 
             if (_rawInstance == null)
             {
@@ -672,6 +764,23 @@ namespace JU.TPS.Netcode
                         RespawnLocalPlayerNow();
                     }
                 }
+            }
+        }
+
+        private static void SetupIfNeeded()
+        {
+            if (_setupQuitApplicationDone == false)
+            {
+                _setupQuitApplicationDone = true;
+                Application.wantsToQuit += TryQuit;
+            }
+
+            if (_setupExitPlayModeDone == false)
+            {
+                _setupExitPlayModeDone = true;
+#if UNITY_EDITOR
+                UnityEditor.EditorApplication.playModeStateChanged += OnPlayModeChanged;
+#endif
             }
         }
 
@@ -861,26 +970,119 @@ namespace JU.TPS.Netcode
             throw new Exception($"Missing implementation for {nameof(UnsubscribeOnPlayerRespawn)} on {GetType().Name}");
         }
 
-        protected virtual void OnEditorExitPlayMode()
+        /// <summary>
+        /// Finds available rooms with pagination.
+        /// </summary>
+        /// <param name="page">The page number to retrieve.</param>
+        /// <param name="pageSize">The number of rooms per page.</param>
+        /// <returns>A collection of rooms found. Null if the search fails or is not allowed.</returns>
+        public async static Task<IEnumerable<ISessionInfo>> FindRooms(int page, int pageSize)
         {
+            if (CanSearchRooms == false)
+            {
+#if UNITY_EDITOR
+                Debug.LogError($"Check {nameof(JUNetcodeMatchManagerBase)}.{nameof(CanSearchRooms)} before calling {nameof(FindRooms)}.");
+#endif
+
+                return null;
+            }
+
+            QuerySessionsOptions queryOptions = new()
+            {
+                Skip = page * pageSize,
+                Count = pageSize,
+            };
+
+            try
+            {
+                QuerySessionsResults result = await MultiplayerService.Instance.QuerySessionsAsync(queryOptions);
+                _lastRoomSearchTime = Time.unscaledTime;
+                return result.Sessions;
+            }
+            catch (SessionException e)
+            {
+                Debug.LogError($"Failed to query sessions: {e.Message} {e.Error}");
+                return null;
+            }
         }
 
         /// <summary>
-        /// Leaves <see cref="CurrentSession"/> if one exists.
-        /// parameter <paramref name="onLeft"/> is invoked after leaving the session.
+        /// Checks if a room with the specified room name exists.
         /// </summary>
-        protected async void LeaveCurrentSession(UnityAction<bool> onLeft = null)
+        /// <param name="roomName">The name of the room to check for existence.</param>
+        /// <returns>True if a room with the specified room name exists, otherwise false.</returns>
+        public async static Task<bool> RoomExist(string roomName)
         {
-            if (_isLeavingSession)
+            if (CanSearchRooms == false)
+            {
+#if UNITY_EDITOR
+                Debug.LogError($"Check {nameof(JUNetcodeMatchManagerBase)}.{nameof(CanSearchRooms)} before calling {nameof(RoomExist)}.");
+#endif
+
+                return false;
+            }
+
+            QuerySessionsOptions queryOptions = new()
+            {
+                FilterOptions = new()
+                {
+                    new(
+                        field: FilterField.Name,
+                        operation: FilterOperation.Equal,
+                        value: roomName
+                    )
+                },
+                Count = 1
+            };
+
+            try
+            {
+                QuerySessionsResults result = await MultiplayerService.Instance.QuerySessionsAsync(queryOptions);
+                _lastRoomSearchTime = Time.unscaledTime;
+                return result.Sessions.Count > 0;
+            }
+            catch (SessionException e)
+            {
+                if (e.Error != SessionError.RateLimitExceeded)
+                {
+                    Debug.LogError($"Failed to query sessions: {e.Message} {e.Error}");
+                }
+
+                return false;
+            }
+        }
+
+        private static async void OnEditorExitPlayMode()
+        {
+            if (CurrentRoom != null)
+            {
+                await LeaveCurrentRoom();
+            }
+
+            _setupQuitApplicationDone = false;
+            _lastRoomSearchTime = 0f;
+            _isLeavingRoom = false;
+            CurrentRoom = null;
+            JoinRoom = null;
+            ExitingPlayMode?.Invoke();
+        }
+
+        /// <summary>
+        /// Leaves <see cref="CurrentRoom"/> if one exists.
+        /// parameter <paramref name="onLeft"/> is invoked after leaving the room.
+        /// </summary>
+        protected async static Task LeaveCurrentRoom(UnityAction<bool> onLeft = null)
+        {
+            if (_isLeavingRoom)
             {
                 onLeft?.Invoke(false);
                 return;
             }
 
-            ISession session = CurrentSession;
-            CurrentSession = null;
+            ISession session = CurrentRoom;
+            CurrentRoom = null;
 
-            // The session may have been joined by a request still in flight, so fall back to the service's own list.
+            // The room may have been joined by a request still in flight, so fall back to the service's own list.
             if (session == null)
             {
                 try
@@ -903,7 +1105,7 @@ namespace JU.TPS.Netcode
                 return;
             }
 
-            _isLeavingSession = true;
+            _isLeavingRoom = true;
             try
             {
                 await session.LeaveAsync();
@@ -916,12 +1118,12 @@ namespace JU.TPS.Netcode
             }
             catch (SessionException e)
             {
-                Debug.LogError($"Failed to leave session: {e.Message}");
+                Debug.LogError($"Failed to leave room: {e.Message}");
                 onLeft?.Invoke(false);
             }
             finally
             {
-                _isLeavingSession = false;
+                _isLeavingRoom = false;
             }
 
             if (NetworkManager.Singleton)
@@ -943,28 +1145,146 @@ namespace JU.TPS.Netcode
         }
 
         /// <summary>
-        /// Creates or joins a session, then raises <see cref="JoinSession"/>.
+        /// Return the room name.
         /// </summary>
-        /// <param name="sessionName">Name of the session. Invalid characters are replaced.</param>
-        /// <param name="maxPlayers">Maximum number of players in the session.</param>
-        protected async void CreateOrJoinSession(string sessionName, int maxPlayers)
+        /// <param name="session"></param>
+        /// <returns></returns>
+        public static string GetRoomName(ISessionInfo session)
         {
+            if (session == null)
+            {
+                return "No Room";
+            }
+
+            return session.Id;
+        }
+
+        /// <summary>
+        /// Return the room name.
+        /// </summary>
+        /// <param name="session"></param>
+        /// <returns></returns>
+        public static string GetRoomName(ISession session)
+        {
+            if (session == null)
+            {
+                return "No Room";
+            }
+
+            return session.Id;
+        }
+
+        /// <summary>
+        /// Return the map name of the room.
+        /// </summary>
+        /// <param name="session"></param>
+        /// <returns></returns>
+        public static string GetMapName(ISessionInfo session)
+        {
+            if (session == null)
+            {
+                return "Unknown";
+            }
+
+            if (session.Properties == null)
+            {
+                return "Unknown";
+            }
+
+            if (session.Properties.TryGetValue(_roomPropertyMapName, out SessionProperty mapNameProperty))
+            {
+                string mapName = mapNameProperty.Value.ToString();
+                mapName = string.IsNullOrEmpty(mapName) ? "Unknown" : mapName;
+                return mapName;
+            }
+            return "Unknown";
+        }
+
+        /// <summary>
+        /// Return the map name of the room.
+        /// </summary>
+        /// <param name="session"></param>
+        /// <returns></returns>
+        public static string GetMapName(ISession session)
+        {
+            if (session == null)
+            {
+                return "Unknown";
+            }
+
+            if (session.Properties.TryGetValue(_roomPropertyMapName, out SessionProperty mapNameProperty))
+            {
+                string mapName = mapNameProperty.Value;
+                mapName = string.IsNullOrEmpty(mapName) ? "Unknown" : mapName;
+                return mapName;
+            }
+
+            return "Unknown";
+        }
+
+        /// <summary>
+        /// Creates or joins a room, then raises <see cref="JoinRoom"/>. Does not start the match, just confirm player presence.
+        /// </summary>
+        /// <param name="roomName">Name of the room. Invalid characters are replaced.</param>
+        /// <param name="maxPlayers">Maximum number of players in the room.</param>
+        /// <param name="mapName">Name of the map for the room.</param>
+        /// <param name="startScene">Name of the scene to start in the room.</param>
+        /// <param name="roomPassword">Password for the room, if any.</param>
+        protected async static Task CreateOrJoinRoom(string roomName, int maxPlayers, string mapName = null, string startScene = null, string roomPassword = null)
+        {
+            if (CurrentRoom != null)
+            {
+                Debug.LogError("Already in a room.");
+                return;
+            }
+
+            SetupIfNeeded();
+
             // Session IDs must not contain spaces or special characters.
-            sessionName = System.Text.RegularExpressions.Regex.Replace(sessionName ?? string.Empty, "[^a-zA-Z0-9_-]", "-");
+            roomName = System.Text.RegularExpressions.Regex.Replace(roomName ?? string.Empty, "[^a-zA-Z0-9_-]", "-");
+
+            if (roomPassword != null)
+            {
+                roomPassword = roomPassword.Trim();
+            }
+            if (string.IsNullOrWhiteSpace(roomPassword) == true || string.IsNullOrEmpty(roomPassword) == true)
+            {
+                roomPassword = null;
+            }
 
             ThrowIfNetworkManagerMissing();
+
+            Dictionary<string, SessionProperty> _roomProperties = new();
+
+            if (startScene != null)
+            {
+                if (string.IsNullOrWhiteSpace(startScene) == false && string.IsNullOrEmpty(startScene) == false)
+                {
+                    _roomProperties[_roomPropertyStartScene] = new(startScene);
+                }
+            }
+
+            if (mapName != null)
+            {
+                if (string.IsNullOrWhiteSpace(mapName) == false && string.IsNullOrEmpty(mapName) == false)
+                {
+                    _roomProperties[_roomPropertyMapName] = new(mapName);
+                }
+            }
 
             SessionOptions sessionOptions = new SessionOptions
             {
                 MaxPlayers = maxPlayers,
                 IsLocked = false,
                 IsPrivate = false,
+                Password = roomPassword,
+                SessionProperties = _roomProperties
             }.WithRelayNetwork();
 
             try
             {
-                CurrentSession = await MultiplayerService.Instance.CreateOrJoinSessionAsync(sessionName, sessionOptions);
-                JoinSession?.Invoke(CurrentSession);
+                CurrentRoom = await MultiplayerService.Instance.CreateOrJoinSessionAsync(roomName, sessionOptions);
+                JoinRoom?.Invoke(CurrentRoom);
             }
             catch (SessionException e)
             {
@@ -972,6 +1292,11 @@ namespace JU.TPS.Netcode
             }
         }
 
+        /// <summary>
+        /// Tries to trigger the respawn for the local player. Returns true if the respawn was successfully triggered, false otherwise.
+        /// After triggered, a timer will start and the player will be respawned once the timer completes.
+        /// </summary>
+        /// <returns></returns>
         public bool TryTriggerRespawn()
         {
             if (LocalPlayerEnableRespawnTimer > 0)
@@ -993,14 +1318,14 @@ namespace JU.TPS.Netcode
             throw new NotImplementedException($"Missing implementation for {nameof(GenerateSpawnPosition)} in {GetType().Name}");
         }
 
-        private bool TryQuit()
+        private static bool TryQuit()
         {
-            if (_isLeavingSession)
+            if (_isLeavingRoom)
             {
                 return false;
             }
 
-            LeaveCurrentSession(success =>
+            _ = LeaveCurrentRoom(success =>
             {
                 if (success)
                 {
@@ -1008,11 +1333,11 @@ namespace JU.TPS.Netcode
                 }
             });
 
-            return CurrentSession == null && _isLeavingSession == false;
+            return CurrentRoom == null && _isLeavingRoom == false;
         }
 
 #if UNITY_EDITOR
-        private void OnPlayModeChanged(UnityEditor.PlayModeStateChange state)
+        private static void OnPlayModeChanged(UnityEditor.PlayModeStateChange state)
         {
             if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode)
             {
@@ -1103,17 +1428,12 @@ namespace JU.TPS.Netcode
         {
             get
             {
-                if (UnityServices.State != ServicesInitializationState.Initialized)
+                if (IsConnectedAndAuthenticated == false)
                 {
                     return false;
                 }
 
-                if (AuthenticationService.Instance.IsSignedIn == false)
-                {
-                    return false;
-                }
-
-                if (Instance != null && Instance.CurrentSession != null)
+                if (Instance != null && CurrentRoom != null)
                 {
                     return false;
                 }
@@ -1157,7 +1477,7 @@ namespace JU.TPS.Netcode
         }
 
         /// <inheritdoc/>
-        protected override void Awake()
+        protected override async void Awake()
         {
             base.Awake();
 
@@ -1175,13 +1495,18 @@ namespace JU.TPS.Netcode
                 _playerRespawn?.Invoke(player);
             };
 
+            ExitingPlayMode += () =>
+            {
+                StartMatchSettings = null;
+            };
+
             JUPlayerPropertiesBase<TManager, TPlayerProperties>.SubscribeOnPlayerSpawned(OnPlayerPropertiesSpawned);
             JUPlayerPropertiesBase<TManager, TPlayerProperties>.SubscribeOnPlayerDespawned(OnPlayerPropertiesDespawned);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (StartMatchSettings == null)
             {
-                DebugStartMatch();
+                await DebugStartMatch();
                 return;
             }
 #endif
@@ -1200,7 +1525,7 @@ namespace JU.TPS.Netcode
                     return;
                 }
 
-                CreateMatch(StartMatchSettings);
+                await CreateMatch(StartMatchSettings);
             }
             else
             {
@@ -1211,9 +1536,9 @@ namespace JU.TPS.Netcode
         protected override void OnApplicationQuit()
         {
             base.OnApplicationQuit();
-            if (CurrentSession != null)
+            if (CurrentRoom != null)
             {
-                LeaveCurrentSession();
+                _ = LeaveCurrentRoom();
                 return;
             }
         }
@@ -1221,7 +1546,7 @@ namespace JU.TPS.Netcode
         protected override void OnDisable()
         {
             base.OnDisable();
-            LeaveCurrentSession();
+            _ = LeaveCurrentRoom();
         }
 
         public override void OnDestroy()
@@ -1345,9 +1670,32 @@ namespace JU.TPS.Netcode
         /// Starts the match. Implement it to create or join the session for the mode.
         /// </summary>
         /// <param name="matchSettings">Settings of the match to start.</param>
-        protected virtual void CreateMatch(TMatchSettings matchSettings)
+        protected virtual async Task CreateMatch(TMatchSettings matchSettings)
         {
             throw new NotImplementedException($"Missing implementation for {nameof(CreateMatch)} on {GetType().Name}");
+        }
+
+        /// <summary>
+        /// Creates or joins a match room based on the current <see cref="StartMatchSettings"/>. Does not start the match, just confirm player presence.
+        /// Usefull to enter on a room from main menu and then load game scene (that contains the match manager, it's made manually by the developer).
+        /// </summary>
+        /// <returns></returns>
+        public async static Task CreateOrJoinOnMatchRoom()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Assert(StartMatchSettings != null, $"Before calling {nameof(CreateOrJoinOnMatchRoom)}, you need to set {nameof(StartMatchSettings)} on {typeof(TManager).Name}");
+            Debug.Assert(string.IsNullOrEmpty(StartMatchSettings.PlayerName) == false, $"Before calling {nameof(CreateOrJoinOnMatchRoom)}, you need to set {nameof(StartMatchSettings)}.{nameof(StartMatchSettings.PlayerName)} on {typeof(TManager).Name}");
+            Debug.Assert(string.IsNullOrEmpty(StartMatchSettings.RoomName) == false, $"Before calling {nameof(CreateOrJoinOnMatchRoom)}, you need to set {nameof(StartMatchSettings)}.{nameof(StartMatchSettings.RoomName)} on {typeof(TManager).Name}");
+            Debug.Assert(CurrentRoom == null, "The player is already on a room.");
+#endif
+
+            await CreateOrJoinRoom(
+                roomName: StartMatchSettings.RoomName,
+                maxPlayers: StartMatchSettings.MatchMaxPlayers,
+                roomPassword: StartMatchSettings.RoomPassword,
+                mapName: StartMatchSettings.MapName,
+                startScene: StartMatchSettings.StartScene
+            );
         }
 
         private void OnPlayerSpawned(TPlayerProperties playerProperties)
@@ -1421,13 +1769,6 @@ namespace JU.TPS.Netcode
             _playerLeft?.Invoke(playerProperties);
         }
 
-        protected override void OnEditorExitPlayMode()
-        {
-            base.OnEditorExitPlayMode();
-
-            StartMatchSettings = null;
-        }
-
         private void OnPlayerPropertiesSpawned(TPlayerProperties playerProperties)
         {
             IEnumerator WaitForSpawn()
@@ -1444,9 +1785,9 @@ namespace JU.TPS.Netcode
             OnPlayerLeft(playerProperties);
         }
 
-        private async void DebugStartMatch()
+        private async Task DebugStartMatch()
         {
-            if (CurrentSession != null)
+            if (CurrentRoom != null)
             {
                 Debug.LogWarning("A match is already in progress.");
                 return;
@@ -1494,9 +1835,11 @@ namespace JU.TPS.Netcode
             }
 
             _debugMatchSettings.PlayerName = $"Anonymous_{Guid.NewGuid().ToString("N").Substring(0, 4)}";
+            _debugMatchSettings.MapName = $"DEBUG {gameObject.scene.buildIndex}";
+            _debugMatchSettings.StartScene = gameObject.scene.name;
 
             StartMatchSettings = _debugMatchSettings;
-            CreateMatch(StartMatchSettings);
+            await CreateMatch(StartMatchSettings);
         }
 
         private static void DebugMatchLog(string message)

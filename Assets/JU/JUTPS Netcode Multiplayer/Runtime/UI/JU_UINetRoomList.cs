@@ -1,47 +1,74 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using Unity.Services.Authentication;
-using Unity.Services.Core;
 using Unity.Services.Multiplayer;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace JU.TPS.Netcode.UI
 {
+    /// <summary>
+    /// UI component for displaying a list of multiplayer rooms.
+    /// </summary>
     public class JU_UINetRoomList : MonoBehaviour
     {
+        /// <summary>
+        /// Pagination settings for the room list.
+        /// </summary>
         [System.Serializable]
         public struct PaginationSettings
         {
+            [Tooltip("The container GameObject that holds the room list buttons.")]
             [SerializeField] private GameObject _container;
+
+            [Tooltip("The text component that displays the current page number.")]
             [SerializeField] private Text _pageIndicator;
+
+            [Tooltip("The button component used to navigate to the next page of rooms.")]
             [SerializeField] private Button _nextPageButton;
+
+            [Tooltip("The button component used to navigate to the previous page of rooms.")]
             [SerializeField] private Button _previousPageButton;
 
             [Space]
+            [Range(1, 100)]
+            [Tooltip("The number of rooms to display per page.")]
             [SerializeField] private int _pageSize;
 
+            /// <summary>
+            /// The container GameObject that holds the room list buttons.
+            /// </summary>
             public GameObject Container
             {
                 get => _container;
             }
 
+            /// <summary>
+            /// The text component that displays the current page number.
+            /// </summary>
             public Text PageIndicator
             {
                 get => _pageIndicator;
             }
 
+            /// <summary>
+            /// The button component used to navigate to the next page of rooms.
+            /// </summary>
             public Button NextPageButton
             {
                 get => _nextPageButton;
             }
 
+            /// <summary>
+            /// The button component used to navigate to the previous page of rooms.
+            /// </summary>
             public Button PreviousPageButton
             {
                 get => _previousPageButton;
             }
 
+            /// <summary>
+            /// The number of rooms to display per page.
+            /// </summary>
             public int PageSize
             {
                 get => _pageSize;
@@ -58,77 +85,89 @@ namespace JU.TPS.Netcode.UI
             }
         }
 
-        private float _lastRefreshTime;
-
-        private QuerySessionsResults _roomsResult;
+        private List<ISessionInfo> _roomsResult;
         private List<JU_UINetRoomListButton> _roomListButtons;
 
+        [Tooltip("The container GameObject that holds the room list of available rooms.")]
         [SerializeField] private GameObject _roomsContainer;
+
+        [Tooltip("The screen displayed while the room list is being refreshed.")]
         [SerializeField] private GameObject _refreshScreen;
+
+        [Tooltip("The screen displayed when no rooms are available.")]
         [SerializeField] private GameObject _noRoomsScreen;
+
+        [Tooltip("The button used to refresh the room list.")]
         [SerializeField] private Button _refreshButton;
 
         [Space]
+        [Tooltip("The prefab used to create room list buttons.\nCan be a gameObject in the scene or a prefab.")]
         [SerializeField] private JU_UINetRoomListButton _roomButtonPrefab;
+
+        [Tooltip("The pagination settings for the room list.")]
         [SerializeField] private PaginationSettings _pagination;
 
+        /// <summary>
+        /// Indicates whether the room list is currently being refreshed.
+        /// </summary>
         public bool IsRefreshing { get; private set; }
 
+        /// <summary>
+        /// The current page number of the room list.
+        /// </summary>
         public int CurrentPage { get; private set; }
 
+        /// <summary>
+        /// The container GameObject that holds the room list of available rooms.
+        /// </summary>
         public GameObject RoomsContainer
         {
             get => _roomsContainer;
         }
 
+        /// <summary>
+        /// The screen displayed while the room list is being refreshed.
+        /// </summary>
         public GameObject RefreshScreen
         {
             get => _refreshScreen;
         }
 
+        /// <summary>
+        /// The screen displayed when no rooms are available.
+        /// </summary>
         public GameObject NoRoomsScreen
         {
             get => _noRoomsScreen;
         }
 
+        /// <summary>
+        /// The button used to refresh the room list.
+        /// </summary>
         public Button RefreshButton
         {
             get => _refreshButton;
         }
 
-        public static bool IsConnected
-        {
-            get
-            {
-                if (UnityServices.Instance == null)
-                {
-                    return false;
-                }
-
-                if (UnityServices.State != ServicesInitializationState.Initialized)
-                {
-                    return false;
-                }
-
-                if (AuthenticationService.Instance == null || AuthenticationService.Instance.IsSignedIn == false)
-                {
-                    return false;
-                }
-
-                return true;
-            }
-        }
-
+        /// <summary>
+        /// Indicates whether there are any available rooms.
+        /// </summary>
         public bool HasRooms
         {
-            get => _roomsResult != null && _roomsResult.Sessions.Count > 0;
+            get => _roomsResult != null && (_roomsResult.Count > 0 || CurrentPage > 0);
         }
 
+        /// <summary>
+        /// The number of available rooms.
+        /// </summary>
         public int RoomCount
         {
-            get => _roomsResult != null ? _roomsResult.Sessions.Count : 0;
+            get => _roomsResult != null ? _roomsResult.Count : 0;
         }
 
+        /// <summary>
+        /// Indicates whether the room list can be refreshed.
+        /// </summary>
         public bool CanRefreshRoomList
         {
             get
@@ -140,7 +179,57 @@ namespace JU.TPS.Netcode.UI
                 }
 #endif
 
-                return IsConnected && IsRefreshing == false && (Time.unscaledTime - _lastRefreshTime >= 1f);
+                return IsRefreshing == false && JUNetcodeMatchManagerBase.CanSearchRooms == true;
+            }
+        }
+
+        /// <summary>
+        /// Indicates whether the room list can go to the next page.
+        /// </summary>
+        public bool CanGoToNextPage
+        {
+            get
+            {
+                if (JUNetcodeMatchManagerBase.IsConnectedAndAuthenticated == false || _roomsResult == null)
+                {
+                    return false;
+                }
+
+                // The current page is full, probably indicating there are more rooms to show on the next page.
+                return _roomsResult.Count >= _pagination.PageSize;
+            }
+        }
+
+        /// <summary>
+        /// Indicates whether the room list can go to the previous page.
+        /// </summary>
+        public bool CanGoToPreviousPage
+        {
+            get
+            {
+                if (JUNetcodeMatchManagerBase.IsConnectedAndAuthenticated == false || _roomsResult == null)
+                {
+                    return false;
+                }
+
+                // The current page is not the first page.
+                return CurrentPage > 0;
+            }
+        }
+
+        /// <summary>
+        /// The list of available room results. Returns null if no rooms are available.
+        /// </summary>
+        public IEnumerable<ISessionInfo> RoomResults
+        {
+            get
+            {
+                if (_roomsResult == null)
+                {
+                    return null;
+                }
+
+                return _roomsResult;
             }
         }
 
@@ -214,13 +303,13 @@ namespace JU.TPS.Netcode.UI
                 ShowRefreshScreen();
                 yield return new WaitWhile(() =>
                 {
-                    return IsConnected == false;
+                    return JUNetcodeMatchManagerBase.IsConnectedAndAuthenticated == false;
                 });
 
                 RefreshList();
             }
 
-            if (IsConnected == true)
+            if (JUNetcodeMatchManagerBase.IsConnectedAndAuthenticated == true)
             {
                 RefreshList();
             }
@@ -246,7 +335,7 @@ namespace JU.TPS.Netcode.UI
 
             ClearList();
             ShowRefreshScreen();
-            if (IsConnected == false)
+            if (JUNetcodeMatchManagerBase.IsConnectedAndAuthenticated == false)
             {
                 ShowNoRoomsScreen();
                 return;
@@ -255,13 +344,16 @@ namespace JU.TPS.Netcode.UI
             IsRefreshing = true;
             try
             {
-                _lastRefreshTime = Time.unscaledTime;
-                _roomsResult = await MultiplayerService.Instance.QuerySessionsAsync(new()
+                if (JUNetcodeMatchManagerBase.CanSearchRooms == true)
                 {
-                    Skip = CurrentPage * _pagination.PageSize,
-                    Count = _pagination.PageSize
-                });
-                if (_roomsResult.Sessions.Count == 0)
+                    IEnumerable<ISessionInfo> result = await JUNetcodeMatchManagerBase.FindRooms(CurrentPage, _pagination.PageSize);
+                    if (result != null)
+                    {
+                        _roomsResult = new List<ISessionInfo>(result);
+                    }
+                }
+
+                if (CurrentPage == 0 && _roomsResult.Count == 0)
                 {
                     ShowNoRoomsScreen();
                 }
@@ -353,37 +445,27 @@ namespace JU.TPS.Netcode.UI
                 _refreshScreen.SetActive(false);
             }
 
-            bool isLastPage = CurrentPage >= (_roomsResult.Sessions.Count - 1);
-            int RoomCount = _roomsResult.Sessions.Count;
             if (_pagination.Container != null)
             {
                 _pagination.Container.SetActive(true);
                 if (_pagination.NextPageButton != null)
                 {
-                    _pagination.NextPageButton.gameObject.SetActive(isLastPage == false);
+                    _pagination.NextPageButton.gameObject.SetActive(CanGoToNextPage);
                 }
                 if (_pagination.PreviousPageButton != null)
                 {
-                    _pagination.PreviousPageButton.gameObject.SetActive(CurrentPage > 0 && RoomCount >= _pagination.PageSize);
+                    _pagination.PreviousPageButton.gameObject.SetActive(CanGoToPreviousPage);
                 }
 
                 if (_pagination.PageIndicator != null)
                 {
-                    if (RoomCount >= _pagination.PageSize)
-                    {
-                        _pagination.PageIndicator.gameObject.SetActive(true);
-                        _pagination.PageIndicator.text = $"Page {CurrentPage + 1} of {_roomsResult.Sessions.Count}";
-                    }
-                    else
-                    {
-                        _pagination.PageIndicator.gameObject.SetActive(false);
-                    }
+                    _pagination.PageIndicator.text = $"{CurrentPage + 1}";
                 }
             }
 
-            if (_roomsContainer != null && _roomsContainer.activeInHierarchy == true && HasRooms)
+            if (_roomsContainer != null && _roomsContainer.activeInHierarchy == true)
             {
-                foreach (ISessionInfo s in _roomsResult.Sessions)
+                foreach (ISessionInfo s in _roomsResult)
                 {
                     JU_UINetRoomListButton roomButton = Instantiate(_roomButtonPrefab, _roomsContainer.transform);
                     roomButton.gameObject.SetActive(true);
@@ -393,9 +475,12 @@ namespace JU.TPS.Netcode.UI
             }
         }
 
+        /// <summary>
+        /// Sets the next page of the room list if available.
+        /// </summary>
         public void SetNextPage()
         {
-            if (HasRooms == false || CurrentPage >= _roomsResult.Sessions.Count)
+            if (CanGoToNextPage == false)
             {
                 return;
             }
@@ -404,11 +489,15 @@ namespace JU.TPS.Netcode.UI
             RefreshList();
         }
 
+        /// <summary>
+        /// Sets the previous page of the room list if available.
+        /// </summary>
         public void SetPreviousPage()
         {
-            if (HasRooms == false || CurrentPage == 0)
+            if (CanGoToPreviousPage == false)
             {
                 CurrentPage = 0;
+                RefreshList();
                 return;
             }
 

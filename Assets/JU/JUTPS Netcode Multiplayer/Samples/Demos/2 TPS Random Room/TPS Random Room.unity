@@ -1141,11 +1141,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: JUTPS.Multiplayer.Netcode::JU.TPS.Netcode.JUNetcodeSimpleMatchManager
   ShowTopMostFoldoutHeaderGroup: 1
   _respawnSettings:
-    _enabled: 0
+    _enabled: 1
     _respawnTime: 3
     _enableRespawnTime: 3
   _debugMatchSettings:
-    _sessionName: Debug Session Simple Match
+    _roomName: Debug Session Simple Match
     _playerName: Player 1
     MaxPlayers: 4
   SpawnPoints:
