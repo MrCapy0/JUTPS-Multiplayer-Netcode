@@ -88,6 +88,7 @@ namespace JU.TPS.Netcode.UI
         private List<ISessionInfo> _roomsResult;
         private List<JU_UINetRoomListButton> _roomListButtons;
 
+        [Header("Screens")]
         [Tooltip("The container GameObject that holds the room list of available rooms.")]
         [SerializeField] private GameObject _roomsContainer;
 
@@ -97,15 +98,19 @@ namespace JU.TPS.Netcode.UI
         [Tooltip("The screen displayed when no rooms are available.")]
         [SerializeField] private GameObject _noRoomsScreen;
 
-        [Tooltip("The button used to refresh the room list.")]
-        [SerializeField] private Button _refreshButton;
+        [Header("Filters")]
+        [Tooltip("The dropdown used to filter rooms by password requirement.\nMust have 3 options: All, WithoutPassword, WithPassword.")]
+        [SerializeField] private Dropdown _passwordFilterDropdown;
 
-        [Space]
+        [Header("Room List")]
         [Tooltip("The prefab used to create room list buttons.\nCan be a gameObject in the scene or a prefab.")]
         [SerializeField] private JU_UINetRoomListButton _roomButtonPrefab;
 
         [Tooltip("The pagination settings for the room list.")]
         [SerializeField] private PaginationSettings _pagination;
+
+        [Tooltip("The button used to refresh the room list.")]
+        [SerializeField] private Button _refreshButton;
 
         /// <summary>
         /// Indicates whether the room list is currently being refreshed.
@@ -116,6 +121,11 @@ namespace JU.TPS.Netcode.UI
         /// The current page number of the room list.
         /// </summary>
         public int CurrentPage { get; private set; }
+
+        /// <summary>
+        /// The current password filter applied to the room list.
+        /// </summary>
+        public JUNetcodeMatchManagerBase.PasswordFilter CurrentPasswordFilter { get; private set; }
 
         /// <summary>
         /// The container GameObject that holds the room list of available rooms.
@@ -147,6 +157,14 @@ namespace JU.TPS.Netcode.UI
         public Button RefreshButton
         {
             get => _refreshButton;
+        }
+
+        /// <summary>
+        /// The dropdown used to filter rooms by password requirement.
+        /// </summary>
+        public Dropdown PasswordFilterDropdown
+        {
+            get => _passwordFilterDropdown;
         }
 
         /// <summary>
@@ -274,6 +292,30 @@ namespace JU.TPS.Netcode.UI
             {
                 _refreshButton.onClick.AddListener(RefreshList);
             }
+
+            // Filters.
+            if (_passwordFilterDropdown != null)
+            {
+                if (_passwordFilterDropdown.options.Count != 3)
+                {
+                    Debug.LogWarning($"{nameof(_passwordFilterDropdown)} does not have correct options.\n Expected 3 options for {nameof(JUNetcodeMatchManagerBase.PasswordFilter)}.");
+                    Debug.LogWarning($"Auto assigning default options for {nameof(_passwordFilterDropdown)}.");
+                    _passwordFilterDropdown.ClearOptions();
+                    _passwordFilterDropdown.AddOptions(new List<string> { "All", "WithoutPassword", "WithPassword" });
+                    _passwordFilterDropdown.value = 0; // Set default to "All".
+                }
+
+                if (_passwordFilterDropdown.value < 0 || _passwordFilterDropdown.value >= 3)
+                {
+                    _passwordFilterDropdown.value = 0; // Set default to "All" if the value is out of range.
+                }
+
+                CurrentPasswordFilter = (JUNetcodeMatchManagerBase.PasswordFilter)_passwordFilterDropdown.value;
+                _passwordFilterDropdown.onValueChanged.AddListener(value =>
+                {
+                    CurrentPasswordFilter = (JUNetcodeMatchManagerBase.PasswordFilter)value;
+                });
+            }
         }
 
         private void OnEnable()
@@ -346,7 +388,7 @@ namespace JU.TPS.Netcode.UI
             {
                 if (JUNetcodeMatchManagerBase.CanSearchRooms == true)
                 {
-                    IEnumerable<ISessionInfo> result = await JUNetcodeMatchManagerBase.FindRooms(CurrentPage, _pagination.PageSize);
+                    IEnumerable<ISessionInfo> result = await JUNetcodeMatchManagerBase.FindRooms(CurrentPage, _pagination.PageSize, CurrentPasswordFilter);
                     if (result != null)
                     {
                         _roomsResult = new List<ISessionInfo>(result);

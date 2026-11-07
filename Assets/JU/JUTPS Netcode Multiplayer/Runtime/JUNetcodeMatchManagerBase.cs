@@ -481,6 +481,25 @@ namespace JU.TPS.Netcode
     /// </summary>
     public abstract class JUNetcodeMatchManagerBase : NetworkBehaviour
     {
+        /// <summary>
+        /// The filter options for rooms based on password requirement.
+        /// </summary>
+        public enum PasswordFilter
+        {
+            /// <summary>
+            /// All rooms, regardless of password requirement.
+            /// </summary>
+            All,
+            /// <summary>
+            /// Rooms that do not require a password.
+            /// </summary>
+            WithoutPassword,
+            /// <summary>
+            /// Rooms that require a password.
+            /// </summary>
+            WithPassword,
+        }
+
         [Serializable]
         public struct RespawnSettings
         {
@@ -975,8 +994,9 @@ namespace JU.TPS.Netcode
         /// </summary>
         /// <param name="page">The page number to retrieve.</param>
         /// <param name="pageSize">The number of rooms per page.</param>
+        /// <param name="passwordFilter">The password filter to apply when searching for rooms.</param>
         /// <returns>A collection of rooms found. Null if the search fails or is not allowed.</returns>
-        public async static Task<IEnumerable<ISessionInfo>> FindRooms(int page, int pageSize)
+        public async static Task<IEnumerable<ISessionInfo>> FindRooms(int page, int pageSize, PasswordFilter passwordFilter)
         {
             if (CanSearchRooms == false)
             {
@@ -987,10 +1007,22 @@ namespace JU.TPS.Netcode
                 return null;
             }
 
+            List<FilterOption> filterOptions = new();
+
+            if (passwordFilter != PasswordFilter.All)
+            {
+                filterOptions.Add(new FilterOption(
+                    field: FilterField.HasPassword,
+                    operation: FilterOperation.Equal,
+                    value: passwordFilter == PasswordFilter.WithoutPassword ? "false" : "true"
+                ));
+            }
+
             QuerySessionsOptions queryOptions = new()
             {
                 Skip = page * pageSize,
                 Count = pageSize,
+                FilterOptions = filterOptions
             };
 
             try
@@ -1250,6 +1282,14 @@ namespace JU.TPS.Netcode
             if (string.IsNullOrWhiteSpace(roomPassword) == true || string.IsNullOrEmpty(roomPassword) == true)
             {
                 roomPassword = null;
+            }
+
+            if (roomPassword != null)
+            {
+                if (roomPassword.Length < 8 || roomPassword.Length > 64)
+                {
+                    throw new ArgumentException($"[{nameof(CreateOrJoinRoom)}] Room password must be between 8 and 64 characters.");
+                }
             }
 
             ThrowIfNetworkManagerMissing();
