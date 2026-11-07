@@ -1023,7 +1023,7 @@ namespace JU.TPS.Netcode
             {
                 filterOptions.Add(new FilterOption(
                     field: FilterField.AvailableSlots,
-                    operation: FilterOperation.Equal,
+                    operation: FilterOperation.NotEqual,
                     value: "0"
                 ));
             }

@@ -111,7 +111,7 @@ namespace JU.TPS.Netcode
             {
                 get
                 {
-                    return string.IsNullOrWhiteSpace(PlayerName) == false;
+                    return string.IsNullOrWhiteSpace(PlayerName) == false || string.IsNullOrEmpty(PlayerName);
                 }
             }
         }
@@ -130,12 +130,19 @@ namespace JU.TPS.Netcode
         [Serializable]
         public struct UiCreateRoomSettings
         {
+            [SerializeField] private int _maxPlayersPerTeam;
+
             [SerializeField] private InputField _roomNameInputField;
             [SerializeField] private InputField _roomPasswordInputField;
             [SerializeField] private InputField _maxPlayersInputField;
             [SerializeField] private Dropdown _sceneDropdown;
             [SerializeField] private Button _createRoomButton;
             [SerializeField] private Text _roomCreationErrorText;
+
+            public int MaxPlayersPerTeam
+            {
+                get => _maxPlayersPerTeam;
+            }
 
             public InputField RoomNameInputField
             {
@@ -254,8 +261,14 @@ namespace JU.TPS.Netcode
                     return true;
                 }
             }
+
+            internal void Reset()
+            {
+                _maxPlayersPerTeam = 10;
+            }
         }
 
+        [Space]
         [SerializeField] private CanvasGroup _screenInteraction;
         [SerializeField] private GameObject _loadingScreen;
 
@@ -306,8 +319,20 @@ namespace JU.TPS.Netcode
             get => _uiConnectionScreen;
         }
 
+        private void Reset()
+        {
+            UiCreateRoom.Reset();
+        }
+
         private void Awake()
         {
+            Debug.Assert(_players != null && _players.Length > 0, $"There are no player prefab assigned in {nameof(JUNetSampleDeathMatchMenu)}.{nameof(_players)}.");
+            foreach (PlayerSettings setting in _players)
+            {
+                Debug.Assert(string.IsNullOrEmpty(setting.Name.Trim()) == false, $"Player setting name is missing in {nameof(JUNetSampleDeathMatchMenu)}.{nameof(_players)}.");
+                Debug.Assert(setting.Prefab != null, $"There is a missing player prefab on {nameof(JUNetSampleDeathMatchMenu)}.{nameof(_players)}.");
+            }
+
             if (UiConnectionScreen.FailedToConnectText != null)
             {
                 UiConnectionScreen.FailedToConnectText.gameObject.SetActive(false);
@@ -407,6 +432,18 @@ namespace JU.TPS.Netcode
             {
                 maxPlayersInputField.characterValidation = InputField.CharacterValidation.Integer;
                 maxPlayersInputField.text = "4";
+                maxPlayersInputField.onEndEdit.AddListener((value) =>
+                {
+                    if (int.TryParse(value, out int result) == false || result < 1)
+                    {
+                        maxPlayersInputField.text = "1";
+                    }
+
+                    else if (result > UiCreateRoom.MaxPlayersPerTeam)
+                    {
+                        maxPlayersInputField.text = UiCreateRoom.MaxPlayersPerTeam.ToString();
+                    }
+                });
             }
 
             if (roomCreationErrorText != null)
