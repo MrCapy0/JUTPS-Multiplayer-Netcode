@@ -99,8 +99,11 @@ namespace JU.TPS.Netcode.UI
         [SerializeField] private GameObject _noRoomsScreen;
 
         [Header("Filters")]
-        [Tooltip("The dropdown used to filter rooms by password requirement.\nMust have 3 options: All, WithoutPassword, WithPassword.")]
+        [Tooltip("The dropdown component used to filter rooms by password requirement.\nMust have 3 options: All, WithoutPassword, WithPassword.")]
         [SerializeField] private Dropdown _passwordFilterDropdown;
+
+        [Tooltip("The toggle component used to exclude full rooms from the room list.")]
+        [SerializeField] private Toggle _excludeFullRoomsToggle;
 
         [Header("Room List")]
         [Tooltip("The prefab used to create room list buttons.\nCan be a gameObject in the scene or a prefab.")]
@@ -109,7 +112,7 @@ namespace JU.TPS.Netcode.UI
         [Tooltip("The pagination settings for the room list.")]
         [SerializeField] private PaginationSettings _pagination;
 
-        [Tooltip("The button used to refresh the room list.")]
+        [Tooltip("The button component used to refresh the room list.")]
         [SerializeField] private Button _refreshButton;
 
         /// <summary>
@@ -126,6 +129,11 @@ namespace JU.TPS.Netcode.UI
         /// The current password filter applied to the room list.
         /// </summary>
         public JUNetcodeMatchManagerBase.PasswordFilter CurrentPasswordFilter { get; private set; }
+
+        /// <summary>
+        /// Indicates whether full rooms are excluded from the room list.
+        /// </summary>
+        public bool ExcludeFullRooms { get; private set; }
 
         /// <summary>
         /// The container GameObject that holds the room list of available rooms.
@@ -152,7 +160,7 @@ namespace JU.TPS.Netcode.UI
         }
 
         /// <summary>
-        /// The button used to refresh the room list.
+        /// The button component used to refresh the room list.
         /// </summary>
         public Button RefreshButton
         {
@@ -165,6 +173,14 @@ namespace JU.TPS.Netcode.UI
         public Dropdown PasswordFilterDropdown
         {
             get => _passwordFilterDropdown;
+        }
+
+        /// <summary>
+        /// The toggle component used to exclude full rooms from the room list.
+        /// </summary>
+        public Toggle ExcludeFullRoomsToggle
+        {
+            get => _excludeFullRoomsToggle;
         }
 
         /// <summary>
@@ -316,6 +332,15 @@ namespace JU.TPS.Netcode.UI
                     CurrentPasswordFilter = (JUNetcodeMatchManagerBase.PasswordFilter)value;
                 });
             }
+
+            if (_excludeFullRoomsToggle != null)
+            {
+                ExcludeFullRooms = _excludeFullRoomsToggle.isOn;
+                _excludeFullRoomsToggle.onValueChanged.AddListener(value =>
+                {
+                    ExcludeFullRooms = value;
+                });
+            }
         }
 
         private void OnEnable()
@@ -388,7 +413,13 @@ namespace JU.TPS.Netcode.UI
             {
                 if (JUNetcodeMatchManagerBase.CanSearchRooms == true)
                 {
-                    IEnumerable<ISessionInfo> result = await JUNetcodeMatchManagerBase.FindRooms(CurrentPage, _pagination.PageSize, CurrentPasswordFilter);
+                    IEnumerable<ISessionInfo> result = await JUNetcodeMatchManagerBase.FindRooms(
+                        page: CurrentPage,
+                        pageSize: _pagination.PageSize,
+                        passwordFilter: CurrentPasswordFilter,
+                        excludeFullRooms: ExcludeFullRooms
+                    );
+
                     if (result != null)
                     {
                         _roomsResult = new List<ISessionInfo>(result);

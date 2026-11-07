@@ -995,8 +995,9 @@ namespace JU.TPS.Netcode
         /// <param name="page">The page number to retrieve.</param>
         /// <param name="pageSize">The number of rooms per page.</param>
         /// <param name="passwordFilter">The password filter to apply when searching for rooms.</param>
+        /// <param name="excludeFullRooms">Whether to exclude rooms that are already full.</param>
         /// <returns>A collection of rooms found. Null if the search fails or is not allowed.</returns>
-        public async static Task<IEnumerable<ISessionInfo>> FindRooms(int page, int pageSize, PasswordFilter passwordFilter)
+        public async static Task<IEnumerable<ISessionInfo>> FindRooms(int page, int pageSize, PasswordFilter passwordFilter, bool excludeFullRooms)
         {
             if (CanSearchRooms == false)
             {
@@ -1015,6 +1016,15 @@ namespace JU.TPS.Netcode
                     field: FilterField.HasPassword,
                     operation: FilterOperation.Equal,
                     value: passwordFilter == PasswordFilter.WithoutPassword ? "false" : "true"
+                ));
+            }
+
+            if (excludeFullRooms)
+            {
+                filterOptions.Add(new FilterOption(
+                    field: FilterField.AvailableSlots,
+                    operation: FilterOperation.Equal,
+                    value: "0"
                 ));
             }
 

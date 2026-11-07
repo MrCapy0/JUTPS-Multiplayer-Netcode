@@ -5201,6 +5201,7 @@ MonoBehaviour:
   _refreshScreen: {fileID: 1951237965}
   _noRoomsScreen: {fileID: 1255407623}
   _passwordFilterDropdown: {fileID: 1997549876}
+  _excludeFullRoomsToggle: {fileID: 1059507409}
   _roomButtonPrefab: {fileID: 1368165973}
   _pagination:
     _container: {fileID: 1737268265}
@@ -5782,7 +5783,7 @@ GameObject:
   - component: {fileID: 1059507408}
   - component: {fileID: 1059507409}
   m_Layer: 5
-  m_Name: Only Avaiable Toggle
+  m_Name: Exclude Full Rooms Toggle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5855,7 +5856,7 @@ MonoBehaviour:
   onValueChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_IsOn: 1
+  m_IsOn: 0
 --- !u!1 &1065609198
 GameObject:
   m_ObjectHideFlags: 0
@@ -8959,7 +8960,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 250, y: 0}
+  m_SizeDelta: {x: 340, y: 0}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!114 &1582194954
 MonoBehaviour:
@@ -8994,7 +8995,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: ' ONLY AVAIABLE'
+  m_Text: EXCLUDE FULL ROOMS
 --- !u!222 &1582194955
 CanvasRenderer:
   m_ObjectHideFlags: 0
