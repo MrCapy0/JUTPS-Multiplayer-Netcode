@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Services.Multiplayer;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace JU.TPS.Netcode.UI
@@ -9,6 +10,7 @@ namespace JU.TPS.Netcode.UI
     /// <summary>
     /// UI component for displaying a list of multiplayer rooms.
     /// </summary>
+    [DisallowMultipleComponent]
     public class JU_UINetRoomList : MonoBehaviour
     {
         /// <summary>
@@ -85,8 +87,16 @@ namespace JU.TPS.Netcode.UI
             }
         }
 
+        private static JU_UINetRoomList _instance;
+
+        private int? _mapFilterIndex;
+        private bool _excludeFullRooms;
+        private JUNetcodeMatchManagerBase.PasswordFilter _passwordFilter;
         private List<ISessionInfo> _roomsResult;
         private List<JU_UINetRoomListButton> _roomListButtons;
+
+        [Tooltip("The names of the maps used for filtering rooms by map name.")]
+        [SerializeField] private string[] _mapsNameFilter;
 
         [Header("Screens")]
         [Tooltip("The container GameObject that holds the room list of available rooms.")]
@@ -105,6 +115,9 @@ namespace JU.TPS.Netcode.UI
         [Tooltip("The toggle component used to exclude full rooms from the room list.")]
         [SerializeField] private Toggle _excludeFullRoomsToggle;
 
+        [Tooltip("The dropdown component used to filter rooms by map name.")]
+        [SerializeField] private Dropdown _mapFilterDropdown;
+
         [Header("Room List")]
         [Tooltip("The prefab used to create room list buttons.\nCan be a gameObject in the scene or a prefab.")]
         [SerializeField] private JU_UINetRoomListButton _roomButtonPrefab;
@@ -114,6 +127,31 @@ namespace JU.TPS.Netcode.UI
 
         [Tooltip("The button component used to refresh the room list.")]
         [SerializeField] private Button _refreshButton;
+
+        /// <summary>
+        /// Invoked when a room is selected from the room list.
+        /// The selected room button is passed as a parameter.
+        /// </summary>
+        public event UnityAction<JU_UINetRoomListButton> RoomSelected;
+
+        /// <summary>
+        /// Invoked when the password filter is changed.
+        /// The new password filter value is passed as a parameter.
+        /// </summary>
+        public event UnityAction<JUNetcodeMatchManagerBase.PasswordFilter> PasswordFilterChanged;
+
+        /// <summary>
+        /// Invoked when a map filter is changed.
+        /// The new map filter index is passed as a parameter.
+        /// Or null if no map is selected.
+        /// </summary>
+        public event UnityAction<int?> MapFilterChanged;
+
+        /// <summary>
+        /// Invoked when the exclude full rooms toggle is changed.
+        /// If the parameter is true, full rooms are excluded from rooms list; otherwise, they are included.
+        /// </summary>
+        public event UnityAction<bool> ExcludeFullRoomsChanged;
 
         /// <summary>
         /// Indicates whether the room list is currently being refreshed.
@@ -128,12 +166,100 @@ namespace JU.TPS.Netcode.UI
         /// <summary>
         /// The current password filter applied to the room list.
         /// </summary>
-        public JUNetcodeMatchManagerBase.PasswordFilter CurrentPasswordFilter { get; private set; }
+        public JUNetcodeMatchManagerBase.PasswordFilter CurrentPasswordFilter
+        {
+            get => _passwordFilter;
+            set
+            {
+                if (_passwordFilter == value)
+                {
+                    return;
+                }
+
+                _passwordFilter = value;
+                PasswordFilterChanged?.Invoke(_passwordFilter);
+            }
+        }
+
+        /// <summary>
+        /// The list of map names used for filtering rooms.
+        /// </summary>
+        public string[] MapNames
+        {
+            get => _mapsNameFilter;
+            set
+            {
+                if (_mapsNameFilter != value)
+                {
+                    _mapsNameFilter = value;
+                    SetupMapList();
+                }
+            }
+        }
+
+        /// <summary>
+        /// The index of the currently selected map if have one.
+        /// </summary>
+        public int? MapFilterIndex
+        {
+            get => _mapFilterIndex;
+            set
+            {
+                if (_mapFilterIndex == value)
+                {
+                    return;
+                }
+
+                _mapFilterIndex = value;
+                if (_mapFilterIndex != null)
+                {
+                    Debug.Assert(_mapFilterIndex >= 0 && _mapFilterIndex < _mapsNameFilter.Length, $"Selected map index {_mapFilterIndex} is out of range.");
+                }
+
+                MapFilterChanged?.Invoke(_mapFilterIndex);
+            }
+        }
+
+        /// <summary>
+        /// The name of the currently selected map to filter the room list.
+        /// </summary>
+        public string MapFilter
+        {
+            get => _mapFilterIndex.HasValue ? _mapsNameFilter[_mapFilterIndex.Value] : null;
+        }
 
         /// <summary>
         /// Indicates whether full rooms are excluded from the room list.
         /// </summary>
-        public bool ExcludeFullRooms { get; private set; }
+        public bool ExcludeFullRooms
+        {
+            get => _excludeFullRooms;
+            private set
+            {
+                if (_excludeFullRooms == value)
+                {
+                    return;
+                }
+
+                _excludeFullRooms = value;
+                ExcludeFullRoomsChanged?.Invoke(_excludeFullRooms);
+            }
+        }
+
+        /// <summary>
+        /// Gets the singleton instance of the <see cref="JU_UINetRoomList"/> component.
+        /// </summary>
+        public static JU_UINetRoomList Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = FindAnyObjectByType<JU_UINetRoomList>(FindObjectsInactive.Include);
+                }
+                return _instance;
+            }
+        }
 
         /// <summary>
         /// The container GameObject that holds the room list of available rooms.
@@ -181,6 +307,14 @@ namespace JU.TPS.Netcode.UI
         public Toggle ExcludeFullRoomsToggle
         {
             get => _excludeFullRoomsToggle;
+        }
+
+        /// <summary>
+        /// The dropdown used to filter rooms by map name.
+        /// </summary>
+        public Dropdown MapFilterDropdown
+        {
+            get => _mapFilterDropdown;
         }
 
         /// <summary>
@@ -267,6 +401,33 @@ namespace JU.TPS.Netcode.UI
             }
         }
 
+        /// <summary>
+        /// The currently selected room button. Returns null if no room is selected.
+        /// </summary>
+        public JU_UINetRoomListButton SelectedRoomButton
+        {
+            get
+            {
+                return JU_UINetRoomListButton.SelectedButton;
+            }
+        }
+
+        /// <summary>
+        /// The currently selected session info. Returns null if no room is selected.
+        /// </summary>
+        public ISessionInfo SelectedSession
+        {
+            get
+            {
+                if (SelectedRoomButton == null)
+                {
+                    return null;
+                }
+
+                return SelectedRoomButton.SessionInfo;
+            }
+        }
+
         private void Reset()
         {
             _pagination.Reset();
@@ -286,6 +447,8 @@ namespace JU.TPS.Netcode.UI
             Debug.Assert(_pagination.PageSize > 0, $"{nameof(_pagination)}.{nameof(_pagination.PageSize)} must be greater than 0 on {gameObject.name}.");
             Debug.Assert(_pagination.NextPageButton != null, $"{nameof(_pagination)}.{nameof(_pagination.NextPageButton)} is not assigned on {gameObject.name}.");
             Debug.Assert(_pagination.PreviousPageButton != null, $"{nameof(_pagination)}.{nameof(_pagination.PreviousPageButton)} is not assigned on {gameObject.name}.");
+
+            SetupMapList();
 
             // A template button is a scene's object when have a valid scene.
             // when is a scene's object it should be deactivated to serve as a template later.
@@ -312,10 +475,12 @@ namespace JU.TPS.Netcode.UI
             // Filters.
             if (_passwordFilterDropdown != null)
             {
+                _passwordFilterDropdown.interactable = false; // Will be enabled once the list is refreshed.
                 if (_passwordFilterDropdown.options.Count != 3)
                 {
                     Debug.LogWarning($"{nameof(_passwordFilterDropdown)} does not have correct options.\n Expected 3 options for {nameof(JUNetcodeMatchManagerBase.PasswordFilter)}.");
                     Debug.LogWarning($"Auto assigning default options for {nameof(_passwordFilterDropdown)}.");
+
                     _passwordFilterDropdown.ClearOptions();
                     _passwordFilterDropdown.AddOptions(new List<string> { "All", "WithoutPassword", "WithPassword" });
                     _passwordFilterDropdown.value = 0; // Set default to "All".
@@ -329,27 +494,106 @@ namespace JU.TPS.Netcode.UI
                 CurrentPasswordFilter = (JUNetcodeMatchManagerBase.PasswordFilter)_passwordFilterDropdown.value;
                 _passwordFilterDropdown.onValueChanged.AddListener(value =>
                 {
+                    if ((int)CurrentPasswordFilter == value)
+                    {
+                        return;
+                    }
+
                     CurrentPasswordFilter = (JUNetcodeMatchManagerBase.PasswordFilter)value;
+                    RefreshList();
                 });
+
+                PasswordFilterChanged += selectedFilter =>
+                {
+                    if (_passwordFilterDropdown == null)
+                    {
+                        return;
+                    }
+
+                    _passwordFilterDropdown.value = (int)selectedFilter;
+                };
             }
 
             if (_excludeFullRoomsToggle != null)
             {
+                _excludeFullRoomsToggle.interactable = false; // Will be enabled once the list is refreshed.
                 ExcludeFullRooms = _excludeFullRoomsToggle.isOn;
                 _excludeFullRoomsToggle.onValueChanged.AddListener(value =>
                 {
+                    if (ExcludeFullRooms == value)
+                    {
+                        return;
+                    }
+
                     ExcludeFullRooms = value;
+                    RefreshList();
                 });
+
+                ExcludeFullRoomsChanged += selectedValue =>
+                {
+                    if (_excludeFullRoomsToggle == null || _excludeFullRoomsToggle.isOn == selectedValue)
+                    {
+                        return;
+                    }
+
+                    _excludeFullRoomsToggle.isOn = selectedValue;
+                };
             }
+
+            if (_mapFilterDropdown != null)
+            {
+                _mapFilterDropdown.interactable = false; // Will be enabled once the list is refreshed.
+                _mapFilterDropdown.onValueChanged.AddListener(value =>
+                {
+                    // Not changed.
+                    if (value == 0 && MapFilterIndex == null || value - 1 == MapFilterIndex)
+                    {
+                        return;
+                    }
+
+                    if (value == 0)
+                    {
+                        MapFilterIndex = null; // null remove map filter.
+                    }
+                    else
+                    {
+                        MapFilterIndex = value - 1;
+                    }
+
+                    RefreshList();
+                });
+
+                MapFilterChanged += selectedFilter =>
+                {
+                    if (_mapFilterDropdown == null)
+                    {
+                        return;
+                    }
+
+                    if (selectedFilter == null)
+                    {
+                        _mapFilterDropdown.value = 0;
+                    }
+                    else
+                    {
+                        _mapFilterDropdown.value = selectedFilter.Value + 1;
+                    }
+                };
+
+                _mapFilterDropdown.value = 0;
+            }
+            MapFilterIndex = null;
         }
 
         private void OnEnable()
         {
+            JU_UINetRoomListButton.OnRoomSelected += OnRoomSelected;
             RefreshListOnConnect();
         }
 
         private void OnDisable()
         {
+            JU_UINetRoomListButton.OnRoomSelected -= OnRoomSelected;
             ClearList();
 
             IsRefreshing = false;
@@ -357,10 +601,50 @@ namespace JU.TPS.Netcode.UI
 
         private void Update()
         {
+            bool canRefresh = CanRefreshRoomList;
             if (_refreshButton != null)
             {
-                _refreshButton.interactable = CanRefreshRoomList;
+                _refreshButton.interactable = canRefresh;
             }
+
+            if (_mapFilterDropdown != null)
+            {
+                _mapFilterDropdown.interactable = canRefresh;
+            }
+
+            if (_passwordFilterDropdown != null)
+            {
+                _passwordFilterDropdown.interactable = canRefresh;
+            }
+
+            if (_excludeFullRoomsToggle != null)
+            {
+                _excludeFullRoomsToggle.interactable = canRefresh;
+            }
+        }
+
+        private void SetupMapList()
+        {
+            if (_mapFilterDropdown != null && _mapsNameFilter != null)
+            {
+                List<string> mapOptions = new(_mapsNameFilter.Length + 1)
+                {
+                    "All"
+                };
+                mapOptions.AddRange(_mapsNameFilter);
+
+                _mapFilterDropdown.ClearOptions();
+                _mapFilterDropdown.AddOptions(mapOptions);
+                _mapFilterDropdown.value = 0;
+            }
+            else if (_mapFilterDropdown != null)
+            {
+                _mapFilterDropdown.ClearOptions();
+                _mapFilterDropdown.AddOptions(new List<string> { "All" });
+                _mapFilterDropdown.value = 0;
+            }
+
+            _mapFilterIndex = null;
         }
 
         private void RefreshListOnConnect()
@@ -370,13 +654,13 @@ namespace JU.TPS.Netcode.UI
                 ShowRefreshScreen();
                 yield return new WaitWhile(() =>
                 {
-                    return JUNetcodeMatchManagerBase.IsConnectedAndAuthenticated == false;
+                    return CanRefreshRoomList == false;
                 });
 
                 RefreshList();
             }
 
-            if (JUNetcodeMatchManagerBase.IsConnectedAndAuthenticated == true)
+            if (CanRefreshRoomList == true)
             {
                 RefreshList();
             }
@@ -417,7 +701,8 @@ namespace JU.TPS.Netcode.UI
                         page: CurrentPage,
                         pageSize: _pagination.PageSize,
                         passwordFilter: CurrentPasswordFilter,
-                        excludeFullRooms: ExcludeFullRooms
+                        excludeFullRooms: ExcludeFullRooms,
+                        mapFilter: MapFilterIndex == null ? null : _mapsNameFilter[MapFilterIndex.Value]
                     );
 
                     if (result != null)
@@ -434,10 +719,6 @@ namespace JU.TPS.Netcode.UI
                 {
                     ShowRoomsScreen();
                 }
-            }
-            catch (System.Exception exception)
-            {
-                Debug.LogError($"Failed to refresh room list: {exception}");
             }
             finally
             {
@@ -546,6 +827,11 @@ namespace JU.TPS.Netcode.UI
                     _roomListButtons.Add(roomButton);
                 }
             }
+        }
+
+        private void OnRoomSelected(JU_UINetRoomListButton selectedButton)
+        {
+            RoomSelected?.Invoke(selectedButton);
         }
 
         /// <summary>

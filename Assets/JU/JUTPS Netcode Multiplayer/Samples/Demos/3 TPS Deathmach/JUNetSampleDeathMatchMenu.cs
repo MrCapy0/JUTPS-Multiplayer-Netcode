@@ -2,9 +2,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using JU.TPS.Netcode.Matchs;
+using JU.TPS.Netcode.UI;
 using Unity.Netcode;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
+using Unity.Services.Lobbies;
+using Unity.Services.Multiplayer;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -103,7 +106,7 @@ namespace JU.TPS.Netcode
                 get
                 {
                     InputField playerNameInputField = PlayerNameInputField;
-                    return playerNameInputField != null ? playerNameInputField.text : string.Empty;
+                    return playerNameInputField != null ? playerNameInputField.text.Trim() : string.Empty;
                 }
             }
 
@@ -111,19 +114,70 @@ namespace JU.TPS.Netcode
             {
                 get
                 {
-                    return string.IsNullOrWhiteSpace(PlayerName) == false || string.IsNullOrEmpty(PlayerName);
+                    return string.IsNullOrEmpty(PlayerName) == false;
                 }
             }
         }
 
         [Serializable]
-        public struct UiRoomSettings
+        public struct UiRoomSelectionSettings
         {
+            [SerializeField] private CanvasGroup _container;
+            [SerializeField] private Text _errorText;
+            [SerializeField] private Text _roomNameText;
+            [SerializeField] private Text _roomMapText;
+            [SerializeField] private Text _roomPlayersText;
             [SerializeField] private Button _startSelectedMatchButton;
+            [SerializeField] private InputField _roomPasswordInputField;
+            [SerializeField] private JU_UINetRoomList _roomList;
+
+            public CanvasGroup Container
+            {
+                get => _container;
+            }
 
             public Button StartSelectedMatchButton
             {
                 get => _startSelectedMatchButton;
+            }
+
+            public Text ErrorText
+            {
+                get => _errorText;
+            }
+
+            public Text RoomNameText
+            {
+                get => _roomNameText;
+            }
+
+            public Text RoomMapText
+            {
+                get => _roomMapText;
+            }
+
+            public Text RoomPlayersText
+            {
+                get => _roomPlayersText;
+            }
+
+            public InputField RoomPasswordInputField
+            {
+                get => _roomPasswordInputField;
+            }
+
+            public JU_UINetRoomList RoomList
+            {
+                get => _roomList;
+            }
+
+            public string RoomPassword
+            {
+                get
+                {
+                    InputField roomPasswordInputField = RoomPasswordInputField;
+                    return roomPasswordInputField != null ? roomPasswordInputField.text : string.Empty;
+                }
             }
         }
 
@@ -268,6 +322,8 @@ namespace JU.TPS.Netcode
             }
         }
 
+        private bool _isJoiningRoom;
+
         [Space]
         [SerializeField] private CanvasGroup _screenInteraction;
         [SerializeField] private GameObject _loadingScreen;
@@ -275,7 +331,7 @@ namespace JU.TPS.Netcode
         [SerializeField] private PlayerSettings[] _players;
         [SerializeField] private SceneSettings[] _scenes;
         [SerializeField] private UiPlayerSettings _uiPlayerSettings;
-        [SerializeField] private UiRoomSettings _uiRoomSettings;
+        [SerializeField] private UiRoomSelectionSettings _uiRoomSelectionSettings;
         [SerializeField] private UiConnectionScreenSetting _uiConnectionScreen;
         [SerializeField] private UiCreateRoomSettings _uiCreateRoomSettings;
 
@@ -304,9 +360,9 @@ namespace JU.TPS.Netcode
             get => _uiPlayerSettings;
         }
 
-        public UiRoomSettings UiRoom
+        public UiRoomSelectionSettings UiRoomSelection
         {
-            get => _uiRoomSettings;
+            get => _uiRoomSelectionSettings;
         }
 
         public UiCreateRoomSettings UiCreateRoom
@@ -411,11 +467,146 @@ namespace JU.TPS.Netcode
                 connectingScreen.SetActive(false);
             }
 
+            SetupRoomSelectionUi();
             SetupRoomCreationUi();
         }
 
         private void Update()
         {
+            RoomSelectionUpdate();
+        }
+
+        private void SetupRoomSelectionUi()
+        {
+            CanvasGroup container = UiRoomSelection.Container;
+            InputField passwordField = UiRoomSelection.RoomPasswordInputField;
+            Button startButton = UiRoomSelection.StartSelectedMatchButton;
+            JU_UINetRoomList roomList = UiRoomSelection.RoomList;
+            Text failedToConnectText = UiRoomSelection.ErrorText;
+
+            Assert(container != null, $"{nameof(UiRoomSelection)}.{nameof(UiRoomSelection.Container)} is not assigned.");
+            Assert(passwordField != null, $"{nameof(UiRoomSelection)}.{nameof(UiRoomSelection.RoomPasswordInputField)} is not assigned.");
+            Assert(startButton != null, $"{nameof(UiRoomSelection)}.{nameof(UiRoomSelection.StartSelectedMatchButton)} is not assigned.");
+            Assert(roomList != null, $"{nameof(UiRoomSelection)}.{nameof(UiRoomSelection.RoomList)} list is not assigned.");
+            Assert(failedToConnectText != null, $"{nameof(UiRoomSelection)}.{nameof(UiRoomSelection.ErrorText)} component is not assigned.");
+
+            roomList.RoomSelected += OnRoomSelected;
+            List<string> mapOptions = new List<string>(_scenes.Length);
+            foreach (SceneSettings scene in _scenes)
+            {
+                mapOptions.Add(scene.Name);
+            }
+
+            roomList.MapNames = mapOptions.ToArray();
+
+            OnRoomSelected(roomList.SelectedRoomButton);
+
+            void OnRoomSelected(JU_UINetRoomListButton selectedButton)
+            {
+                failedToConnectText.text = string.Empty;
+                startButton.interactable = selectedButton != null;
+                passwordField.interactable = selectedButton != null && selectedButton.SessionInfo.HasPassword;
+
+                int availableSlots = selectedButton?.SessionInfo != null ? selectedButton.SessionInfo.AvailableSlots : 0;
+                int maxPlayers = selectedButton?.SessionInfo != null ? selectedButton.SessionInfo.MaxPlayers : 0;
+                int playersCount = maxPlayers - availableSlots;
+
+                string mapName = selectedButton?.SessionInfo != null ? JUNetDeathMatchManager.GetMapName(selectedButton.SessionInfo) : string.Empty;
+                string playersText = $"{playersCount}/{maxPlayers}";
+
+                if (selectedButton == null)
+                {
+                    playersText = string.Empty;
+                }
+                if (UiRoomSelection.RoomNameText != null)
+                {
+                    UiRoomSelection.RoomNameText.text = selectedButton != null ? selectedButton.SessionInfo.Id : string.Empty;
+                }
+                if (UiRoomSelection.RoomPlayersText != null)
+                {
+                    UiRoomSelection.RoomPlayersText.text = playersText;
+                }
+                if (UiRoomSelection.RoomMapText != null)
+                {
+                    UiRoomSelection.RoomMapText.text = mapName;
+                }
+            }
+
+            startButton.onClick.AddListener(async () =>
+            {
+                if (_isJoiningRoom == true)
+                {
+                    return;
+                }
+
+                ISessionInfo selectedSession = roomList.SelectedSession;
+                if (selectedSession == null)
+                {
+                    return;
+                }
+
+                string roomMap = JUNetDeathMatchManager.GetMapName(selectedSession);
+                string startScene = JUNetDeathMatchManager.GetStartScene(selectedSession);
+
+                if (string.IsNullOrEmpty(startScene))
+                {
+                    failedToConnectText.text = "Start scene is not specified for selected room.";
+                    return;
+                }
+
+                if (UiPlayer.HasValidName == false)
+                {
+                    failedToConnectText.text = "Player name is required.";
+                    return;
+                }
+
+                string password = string.Empty;
+                string playerName = UiPlayer.PlayerName;
+
+                if (selectedSession.HasPassword)
+                {
+                    password = passwordField.text.Trim();
+                    if (string.IsNullOrEmpty(password))
+                    {
+                        failedToConnectText.text = "Password is required.";
+                        return;
+                    }
+                }
+
+                JUNetDeathMatchManager.StartMatchSettings = new(
+                    sessionName: JUNetDeathMatchManager.GetRoomName(selectedSession),
+                    sessionPassword: password,
+                    teamMaxPlayers: selectedSession.MaxPlayers / 2,
+                    playerName: playerName,
+                    mapName: roomMap,
+                    startScene: startScene
+                );
+
+                _isJoiningRoom = true;
+                container.interactable = false;
+                try
+                {
+                    await JUNetDeathMatchManager.CreateOrJoinOnMatchRoom();
+                }
+                catch (SessionException)
+                {
+                    throw;
+                }
+                catch (LobbyServiceException)
+                {
+                    throw;
+                }
+                finally
+                {
+                    _isJoiningRoom = false;
+                    container.interactable = true;
+                }
+            });
+        }
+
+        private void RoomSelectionUpdate()
+        {
+
         }
 
         private void SetupRoomCreationUi()
@@ -478,8 +669,16 @@ namespace JU.TPS.Netcode
                         {
                             if (UiPlayer.HasValidName == false)
                             {
-                                roomCreationErrorText.text = $"Invalid player name '{UiPlayer.PlayerName}'.";
-                                roomCreationErrorText.gameObject.SetActive(true);
+                                if (string.IsNullOrEmpty(UiPlayer.PlayerName) == true)
+                                {
+                                    roomCreationErrorText.text = "Player name cannot be empty.";
+                                    roomCreationErrorText.gameObject.SetActive(true);
+                                }
+                                else
+                                {
+                                    roomCreationErrorText.text = $"Invalid player name '{UiPlayer.PlayerName}'.";
+                                    roomCreationErrorText.gameObject.SetActive(true);
+                                }
                             }
 
                             if (JUNetDeathMatchManager.IsConnectedAndAuthenticated == false)
@@ -535,6 +734,7 @@ namespace JU.TPS.Netcode
 
                     try
                     {
+                        _isJoiningRoom = true;
                         if (_screenInteraction != null)
                         {
                             _screenInteraction.interactable = false;
@@ -561,12 +761,22 @@ namespace JU.TPS.Netcode
                             }
                         }
                     }
+                    finally
+                    {
+                        _isJoiningRoom = false;
+                        createRoomButton.interactable = true;
+                    }
                 });
             }
         }
 
         private bool CanCreateRoom()
         {
+            if (_isJoiningRoom)
+            {
+                return false;
+            }
+
             if (UiPlayer.HasValidName == false)
             {
                 return false;
@@ -583,6 +793,13 @@ namespace JU.TPS.Netcode
             }
 
             return true;
+        }
+
+        private void Assert(bool condition, string message)
+        {
+#if UNITY_EDITOR
+            Debug.Assert(condition, $"[{nameof(JUNetSampleDeathMatchMenu)}] '{name}': {message}");
+#endif
         }
     }
 }

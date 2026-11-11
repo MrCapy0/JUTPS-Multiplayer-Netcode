@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using Unity.Services.Multiplayer;
 using JU.TPS.Netcode;
 using JU.TPS.Netcode.UI;
+using UnityEngine.Events;
 
 /// <summary>
 /// Represents a UI button for a multiplayer room in the room list component <see cref="JU_UINetRoomList"/>.
@@ -10,6 +11,7 @@ using JU.TPS.Netcode.UI;
 public class JU_UINetRoomListButton : MonoBehaviour
 {
     private float _lastClickTime;
+    private static JU_UINetRoomListButton _selectedButton;
 
     [Tooltip("The text component displaying the room name.")]
     [SerializeField] private Text _roomNameText;
@@ -29,6 +31,8 @@ public class JU_UINetRoomListButton : MonoBehaviour
 
     [Tooltip("The GameObject representing the unselected style.")]
     [SerializeField] private GameObject _unselectedStyle;
+
+    public static event UnityAction<JU_UINetRoomListButton> OnRoomSelected;
 
     /// <summary>
     /// The session information associated with this room list button.
@@ -86,7 +90,20 @@ public class JU_UINetRoomListButton : MonoBehaviour
     /// <summary>
     /// The currently selected room list button.
     /// </summary>
-    public static JU_UINetRoomListButton SelectedButton { get; private set; }
+    public static JU_UINetRoomListButton SelectedButton
+    {
+        get => _selectedButton;
+        private set
+        {
+            if (value == _selectedButton)
+            {
+                return;
+            }
+
+            _selectedButton = value;
+            OnRoomSelected?.Invoke(_selectedButton);
+        }
+    }
 
     private void Start()
     {
@@ -98,6 +115,14 @@ public class JU_UINetRoomListButton : MonoBehaviour
         if (_selectedStyle != null)
         {
             _selectedStyle.SetActive(false);
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (SelectedButton == this)
+        {
+            SelectedButton = null;
         }
     }
 

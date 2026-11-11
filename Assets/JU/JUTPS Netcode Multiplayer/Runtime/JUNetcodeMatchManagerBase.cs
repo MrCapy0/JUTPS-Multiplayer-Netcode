@@ -2,14 +2,15 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using UnityEngine;
 using Unity.Collections;
 using Unity.Netcode;
+using UnityEngine.Events;
 using Unity.Netcode.Components;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
+using Unity.Services.Lobbies;
 using Unity.Services.Multiplayer;
-using UnityEngine;
-using UnityEngine.Events;
 
 namespace JU.TPS.Netcode
 {
@@ -997,7 +998,7 @@ namespace JU.TPS.Netcode
         /// <param name="passwordFilter">The password filter to apply when searching for rooms.</param>
         /// <param name="excludeFullRooms">Whether to exclude rooms that are already full.</param>
         /// <returns>A collection of rooms found. Null if the search fails or is not allowed.</returns>
-        public async static Task<IEnumerable<ISessionInfo>> FindRooms(int page, int pageSize, PasswordFilter passwordFilter, bool excludeFullRooms)
+        public async static Task<IEnumerable<ISessionInfo>> FindRooms(int page, int pageSize, PasswordFilter passwordFilter, bool excludeFullRooms, string mapFilter)
         {
             if (CanSearchRooms == false)
             {
@@ -1009,6 +1010,15 @@ namespace JU.TPS.Netcode
             }
 
             List<FilterOption> filterOptions = new();
+
+            if (!string.IsNullOrEmpty(mapFilter))
+            {
+                filterOptions.Add(new FilterOption(
+                    field: FilterField.StringIndex1,
+                    operation: FilterOperation.Equal,
+                    value: mapFilter
+                ));
+            }
 
             if (passwordFilter != PasswordFilter.All)
             {
@@ -1035,17 +1045,9 @@ namespace JU.TPS.Netcode
                 FilterOptions = filterOptions
             };
 
-            try
-            {
-                QuerySessionsResults result = await MultiplayerService.Instance.QuerySessionsAsync(queryOptions);
-                _lastRoomSearchTime = Time.unscaledTime;
-                return result.Sessions;
-            }
-            catch (SessionException e)
-            {
-                Debug.LogError($"Failed to query sessions: {e.Message} {e.Error}");
-                return null;
-            }
+            QuerySessionsResults result = await MultiplayerService.Instance.QuerySessionsAsync(queryOptions);
+            _lastRoomSearchTime = Time.unscaledTime;
+            return result.Sessions;
         }
 
         /// <summary>
@@ -1077,21 +1079,9 @@ namespace JU.TPS.Netcode
                 Count = 1
             };
 
-            try
-            {
-                QuerySessionsResults result = await MultiplayerService.Instance.QuerySessionsAsync(queryOptions);
-                _lastRoomSearchTime = Time.unscaledTime;
-                return result.Sessions.Count > 0;
-            }
-            catch (SessionException e)
-            {
-                if (e.Error != SessionError.RateLimitExceeded)
-                {
-                    Debug.LogError($"Failed to query sessions: {e.Message} {e.Error}");
-                }
-
-                return false;
-            }
+            QuerySessionsResults result = await MultiplayerService.Instance.QuerySessionsAsync(queryOptions);
+            _lastRoomSearchTime = Time.unscaledTime;
+            return result.Sessions.Count > 0;
         }
 
         private static async void OnEditorExitPlayMode()
@@ -1158,19 +1148,18 @@ namespace JU.TPS.Netcode
                 // The multiplayer service already disposed the session, can happen when exiting play mode.
                 onLeft?.Invoke(false);
             }
-            catch (SessionException e)
+            catch (SessionException)
             {
-                Debug.LogError($"Failed to leave room: {e.Message}");
                 onLeft?.Invoke(false);
+                throw;
             }
             finally
             {
                 _isLeavingRoom = false;
-            }
-
-            if (NetworkManager.Singleton)
-            {
-                NetworkManager.Singleton.Shutdown();
+                if (NetworkManager.Singleton)
+                {
+                    NetworkManager.Singleton.Shutdown();
+                }
             }
         }
 
@@ -1265,6 +1254,32 @@ namespace JU.TPS.Netcode
         }
 
         /// <summary>
+        /// Return the start scene of the room.
+        /// </summary>
+        /// <param name="session"></param>
+        /// <returns></returns>
+        public static string GetStartScene(ISessionInfo session)
+        {
+            if (session == null)
+            {
+                return null;
+            }
+
+            if (session.Properties == null)
+            {
+                return null;
+            }
+
+            if (session.Properties.TryGetValue(_roomPropertyStartScene, out SessionProperty startSceneProperty))
+            {
+                string startScene = startSceneProperty.Value.ToString();
+                startScene = string.IsNullOrEmpty(startScene) ? null : startScene;
+                return startScene;
+            }
+            return null;
+        }
+
+        /// <summary>
         /// Creates or joins a room, then raises <see cref="JoinRoom"/>. Does not start the match, just confirm player presence.
         /// </summary>
         /// <param name="roomName">Name of the room. Invalid characters are replaced.</param>
@@ -1274,10 +1289,11 @@ namespace JU.TPS.Netcode
         /// <param name="roomPassword">Password for the room, if any.</param>
         protected async static Task CreateOrJoinRoom(string roomName, int maxPlayers, string mapName = null, string startScene = null, string roomPassword = null)
         {
+            Debug.Assert(string.IsNullOrWhiteSpace(roomName) == false && string.IsNullOrEmpty(roomName) == false, "Room name must not be empty.");
+
             if (CurrentRoom != null)
             {
-                Debug.LogError("Already in a room.");
-                return;
+                throw new LobbyServiceException(LobbyExceptionReason.AlreadySubscribedToLobby, "Already in a room.");
             }
 
             SetupIfNeeded();
@@ -1293,13 +1309,17 @@ namespace JU.TPS.Netcode
             {
                 roomPassword = null;
             }
-
             if (roomPassword != null)
             {
                 if (roomPassword.Length < 8 || roomPassword.Length > 64)
                 {
-                    throw new ArgumentException($"[{nameof(CreateOrJoinRoom)}] Room password must be between 8 and 64 characters.");
+                    throw new LobbyServiceException(LobbyExceptionReason.IncorrectPassword, "Room password must be between 8 and 64 characters.");
                 }
+            }
+
+            if (mapName != null)
+            {
+                mapName = mapName.Trim();
             }
 
             ThrowIfNetworkManagerMissing();
@@ -1314,12 +1334,13 @@ namespace JU.TPS.Netcode
                 }
             }
 
-            if (mapName != null)
+            if (string.IsNullOrEmpty(mapName) == false)
             {
-                if (string.IsNullOrWhiteSpace(mapName) == false && string.IsNullOrEmpty(mapName) == false)
-                {
-                    _roomProperties[_roomPropertyMapName] = new(mapName);
-                }
+                _roomProperties[_roomPropertyMapName] = new(
+                    value: mapName,
+                    visibility: VisibilityPropertyOptions.Public,
+                    index: PropertyIndex.String1
+                );
             }
 
             SessionOptions sessionOptions = new SessionOptions
@@ -1331,15 +1352,8 @@ namespace JU.TPS.Netcode
                 SessionProperties = _roomProperties
             }.WithRelayNetwork();
 
-            try
-            {
-                CurrentRoom = await MultiplayerService.Instance.CreateOrJoinSessionAsync(roomName, sessionOptions);
-                JoinRoom?.Invoke(CurrentRoom);
-            }
-            catch (SessionException e)
-            {
-                Debug.LogError($"Failed to create or join session: {e.Message}");
-            }
+            CurrentRoom = await MultiplayerService.Instance.CreateOrJoinSessionAsync(roomName, sessionOptions);
+            JoinRoom?.Invoke(CurrentRoom);
         }
 
         /// <summary>
@@ -1565,21 +1579,31 @@ namespace JU.TPS.Netcode
             {
                 if (UnityServices.State != ServicesInitializationState.Initialized)
                 {
-                    Debug.LogError("Unity Services must be initialized and authenticated before starting the match.");
-                    return;
+                    throw new SessionException(
+                        message: $"{nameof(AuthenticationService)} must be signed in before starting the match.",
+                        error: SessionError.NotAuthorized,
+                        innerException: null
+                     );
                 }
 
                 if (AuthenticationService.Instance.IsSignedIn == false)
                 {
-                    Debug.LogError($"{nameof(AuthenticationService)} must be signed in before starting the match.");
-                    return;
+                    throw new SessionException(
+                        message: $"{nameof(AuthenticationService)} must be signed in before starting the match.",
+                        error: SessionError.NotAuthorized,
+                        innerException: null
+                    );
                 }
 
                 await CreateMatch(StartMatchSettings);
             }
             else
             {
-                Debug.LogError($"The multiplayer game started but the {nameof(TManager)}.{nameof(StartMatchSettings)} was not set. The match cannot proceed without it.");
+                throw new SessionException(
+                    message: $"The multiplayer game started but the {nameof(TManager)}.{nameof(StartMatchSettings)} was not set. The match cannot proceed without it.",
+                    error: SessionError.InvalidParameter,
+                    innerException: null
+                );
             }
         }
 
@@ -1843,45 +1867,19 @@ namespace JU.TPS.Netcode
                 return;
             }
 
-            try
-            {
-                if (UnityServices.State != ServicesInitializationState.Initialized)
-                {
-                    // A unique profile gives each running instance its own anonymous player ID,
-                    // otherwise instances on the same machine share the cached identity.
-                    InitializationOptions options = new InitializationOptions().SetProfile(Guid.NewGuid().ToString("N").Substring(0, 30));
-                    await UnityServices.InitializeAsync(options);
-                    DebugMatchLog("Unity Services initialized.");
-                }
-            }
-            catch (ServicesCreationException e)
-            {
-                Debug.LogError($"Failed to initialize Unity Services: {e.Message}");
-                return;
-            }
-
             if (UnityServices.State != ServicesInitializationState.Initialized)
             {
-                return;
+                // A unique profile gives each running instance its own anonymous player ID,
+                // otherwise instances on the same machine share the cached identity.
+                InitializationOptions options = new InitializationOptions().SetProfile(Guid.NewGuid().ToString("N").Substring(0, 30));
+                await UnityServices.InitializeAsync(options);
+                DebugMatchLog("Unity Services initialized.");
             }
 
             if (AuthenticationService.Instance.IsSignedIn == false)
             {
-                try
-                {
-                    await AuthenticationService.Instance.SignInAnonymouslyAsync();
-                    DebugMatchLog("Signed in anonymously.");
-                }
-                catch (AuthenticationException e)
-                {
-                    Debug.LogError($"Failed to sign in anonymously: {e.Message}");
-                    return;
-                }
-            }
-
-            if (AuthenticationService.Instance.IsSignedIn == false)
-            {
-                return;
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
+                DebugMatchLog("Signed in anonymously.");
             }
 
             _debugMatchSettings.PlayerName = $"Anonymous_{Guid.NewGuid().ToString("N").Substring(0, 4)}";
