@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using JU.TPS.Netcode.Matchs;
 using Unity.Services.Multiplayer;
 using UnityEngine;
 using UnityEngine.Events;
@@ -702,7 +703,8 @@ namespace JU.TPS.Netcode.UI
                         pageSize: _pagination.PageSize,
                         passwordFilter: CurrentPasswordFilter,
                         excludeFullRooms: ExcludeFullRooms,
-                        mapFilter: MapFilterIndex == null ? null : _mapsNameFilter[MapFilterIndex.Value]
+                        mapFilter: MapFilterIndex == null ? null : _mapsNameFilter[MapFilterIndex.Value],
+                        matchType: JUNetDeathMatchManager.MatchType
                     );
 
                     if (result != null)

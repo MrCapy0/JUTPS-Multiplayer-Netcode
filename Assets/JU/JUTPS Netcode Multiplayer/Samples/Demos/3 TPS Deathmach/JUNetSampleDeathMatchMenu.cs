@@ -120,6 +120,23 @@ namespace JU.TPS.Netcode
         }
 
         [Serializable]
+        public struct UiRandomMatchSettings
+        {
+            [SerializeField] private Button _startRandomMatchButton;
+            [SerializeField] private Text _failedToConnectText;
+
+            public Button StartRandomMatchButton
+            {
+                get => _startRandomMatchButton;
+            }
+
+            public Text FailedToConnectText
+            {
+                get => _failedToConnectText;
+            }
+        }
+
+        [Serializable]
         public struct UiRoomSelectionSettings
         {
             [SerializeField] private CanvasGroup _container;
@@ -331,6 +348,7 @@ namespace JU.TPS.Netcode
         [SerializeField] private PlayerSettings[] _players;
         [SerializeField] private SceneSettings[] _scenes;
         [SerializeField] private UiPlayerSettings _uiPlayerSettings;
+        [SerializeField] private UiRandomMatchSettings _uiRandomMatchSettings;
         [SerializeField] private UiRoomSelectionSettings _uiRoomSelectionSettings;
         [SerializeField] private UiConnectionScreenSetting _uiConnectionScreen;
         [SerializeField] private UiCreateRoomSettings _uiCreateRoomSettings;
@@ -467,13 +485,89 @@ namespace JU.TPS.Netcode
                 connectingScreen.SetActive(false);
             }
 
+            SetupRandomMatchUi();
             SetupRoomSelectionUi();
             SetupRoomCreationUi();
         }
 
         private void Update()
         {
-            RoomSelectionUpdate();
+            UpdateRandomMatchUi();
+        }
+
+        private void SetupRandomMatchUi()
+        {
+            Button startRandomMatchButton = _uiRandomMatchSettings.StartRandomMatchButton;
+            Text failedToConnectText = _uiRandomMatchSettings.FailedToConnectText;
+
+            Assert(startRandomMatchButton != null, $"{nameof(UiRandomMatchSettings)}.{nameof(UiRandomMatchSettings.StartRandomMatchButton)} is not assigned.");
+
+            if (failedToConnectText != null)
+            {
+                failedToConnectText.gameObject.SetActive(false);
+            }
+
+            int teamMaxPlayers = 2;
+            startRandomMatchButton.onClick.AddListener(async () =>
+            {
+                if (failedToConnectText != null)
+                {
+                    failedToConnectText.gameObject.SetActive(false);
+                }
+
+                if (UiPlayer.HasValidName == false)
+                {
+                    if (failedToConnectText != null)
+                    {
+                        failedToConnectText.text = "Invalid player name.";
+                        failedToConnectText.gameObject.SetActive(true);
+                    }
+                    return;
+                }
+
+                try
+                {
+                    SceneSettings randomMap = _scenes[UnityEngine.Random.Range(0, _scenes.Length)];
+
+                    startRandomMatchButton.interactable = false;
+                    JUNetDeathMatchManager.StartMatchSettings = new(
+                        playerName: UiPlayer.PlayerName,
+                        sessionName: string.Empty, // For anonymous rooms this is generated automatically.
+                        teamMaxPlayers: teamMaxPlayers,
+                        sessionPassword: null,
+                        mapName: randomMap.Name,
+                        startScene: randomMap.SceneName
+                    );
+
+                    await JUNetDeathMatchManager.CreateOrJoinOnAnonymousRoom();
+                }
+                catch (SessionException e)
+                {
+                    if (failedToConnectText != null)
+                    {
+                        failedToConnectText.gameObject.SetActive(true);
+                        if (e.Error == SessionError.InvalidPlayerName)
+                        {
+                            failedToConnectText.text = "Invalid player name.";
+                        }
+                        else
+                        {
+                            failedToConnectText.text = $"Failed to connect, code {e.Error}: {e.Message}";
+                        }
+                    }
+                    else
+                    {
+                        throw;
+                    }
+
+                    startRandomMatchButton.interactable = true;
+                }
+            });
+        }
+
+        private void UpdateRandomMatchUi()
+        {
+
         }
 
         private void SetupRoomSelectionUi()
@@ -602,11 +696,6 @@ namespace JU.TPS.Netcode
                     container.interactable = true;
                 }
             });
-        }
-
-        private void RoomSelectionUpdate()
-        {
-
         }
 
         private void SetupRoomCreationUi()

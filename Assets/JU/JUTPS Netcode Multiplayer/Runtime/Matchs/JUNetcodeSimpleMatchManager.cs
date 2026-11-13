@@ -86,18 +86,23 @@ namespace JU.TPS.Netcode
                 maxPlayers: matchSettings.MaxPlayers,
                 mapName: matchSettings.MapName,
                 startScene: matchSettings.StartScene,
-                roomPassword: matchSettings.RoomPassword);
+                roomPassword: matchSettings.RoomPassword,
+                isAnonymousRoom: false,
+                matchType: MatchType
+            );
         }
 
         private void OnPlayerSpawned(JUNetcodeSimpleMatchPlayerProperties player)
         {
         }
 
+        /// <inheritdoc/>
+        /// <exception cref="System.Exception">No spawn points are configured, or the selected spawn point is null.</exception>
         internal override (Vector3 position, Quaternion rotation) GenerateSpawnPosition(ulong ownerClientId)
         {
             if (SpawnPoints == null || SpawnPoints.Length == 0)
             {
-                throw new System.InvalidOperationException($"Spawn points must be set on Match Manager {name}.");
+                throw new System.Exception($"Spawn points must be set on Match Manager {name}.");
             }
 
             // The same owner ID produces the same spawn point on every peer.
@@ -107,7 +112,7 @@ namespace JU.TPS.Netcode
             Transform spawnPoint = SpawnPoints[spawnPointIndex];
             if (spawnPoint == null)
             {
-                throw new System.InvalidOperationException($"Spawn point at index {spawnPointIndex} is null on Match Manager {name}.");
+                throw new System.Exception($"Spawn point at index {spawnPointIndex} is null on Match Manager {name}.");
             }
 
             return (spawnPoint.position, spawnPoint.rotation);
