@@ -1906,6 +1906,8 @@ namespace JU.TPS.Netcode
             {
                 sessionId = $"Anonymous_{Guid.NewGuid()}";
             }
+
+            StartMatchSettings.RoomName = sessionId;
             ISession session = await CreateOrJoinRoom(
                 roomName: sessionId,
                 maxPlayers: StartMatchSettings.MatchMaxPlayers,
