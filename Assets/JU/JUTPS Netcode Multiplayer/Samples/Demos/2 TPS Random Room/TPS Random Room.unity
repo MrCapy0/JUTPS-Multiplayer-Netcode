@@ -1147,7 +1147,7 @@ MonoBehaviour:
   _debugMatchSettings:
     _roomName: Debug Session Simple Match
     _playerName: Player 1
-    MaxPlayers: 4
+    _maxPlayers: 4
   SpawnPoints:
   - {fileID: 1615655450}
   - {fileID: 1258890243}

@@ -539,7 +539,7 @@ namespace JU.TPS.Netcode
                         startScene: randomMap.SceneName
                     );
 
-                    await JUNetDeathMatchManager.CreateOrJoinOnAnonymousRoom();
+                    await JUNetDeathMatchManager.CreateOrJoinRoom(anonymousRoom: true);
                 }
                 catch (SessionException e)
                 {
@@ -559,6 +559,8 @@ namespace JU.TPS.Netcode
                     {
                         throw;
                     }
+
+                    throw;
 
                     startRandomMatchButton.interactable = true;
                 }
@@ -680,7 +682,7 @@ namespace JU.TPS.Netcode
                 container.interactable = false;
                 try
                 {
-                    await JUNetDeathMatchManager.CreateOrJoinOnMatchRoom();
+                    await JUNetDeathMatchManager.CreateOrJoinRoom(anonymousRoom: false);
                 }
                 catch (SessionException)
                 {
@@ -830,7 +832,7 @@ namespace JU.TPS.Netcode
                         }
 
                         createRoomButton.interactable = false;
-                        await JUNetDeathMatchManager.CreateOrJoinOnMatchRoom();
+                        await JUNetDeathMatchManager.CreateOrJoinRoom(anonymousRoom: false);
                         SceneManager.LoadScene(selectedScene);
                         if (LoadingScreen != null)
                         {

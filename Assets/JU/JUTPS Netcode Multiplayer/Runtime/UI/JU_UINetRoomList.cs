@@ -704,7 +704,8 @@ namespace JU.TPS.Netcode.UI
                         passwordFilter: CurrentPasswordFilter,
                         excludeFullRooms: ExcludeFullRooms,
                         mapFilter: MapFilterIndex == null ? null : _mapsNameFilter[MapFilterIndex.Value],
-                        matchType: JUNetDeathMatchManager.MatchType
+                        matchType: JUNetDeathMatchManager.MatchType,
+                        anonymousRoomsFilter: JUNetcodeMatchManagerBase.AnonymousRoomsFilter.None
                     );
 
                     if (result != null)

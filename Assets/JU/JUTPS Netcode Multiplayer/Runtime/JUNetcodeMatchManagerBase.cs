@@ -30,7 +30,7 @@ namespace JU.TPS.Netcode
         /// <summary>
         /// Room password used to join the match.
         /// </summary>
-        public string RoomPassword { get; private set; }
+        public string RoomPassword { get; internal set; }
 
         /// <summary>
         /// Name of the room to create or join.
@@ -492,7 +492,7 @@ namespace JU.TPS.Netcode
             /// <summary>
             /// All rooms, regardless of password requirement.
             /// </summary>
-            All,
+            None,
             /// <summary>
             /// Rooms that do not require a password.
             /// </summary>
@@ -501,6 +501,44 @@ namespace JU.TPS.Netcode
             /// Rooms that require a password.
             /// </summary>
             WithPassword,
+        }
+
+        /// <summary>
+        /// Filter options for rooms based on lock status.
+        /// </summary>
+        public enum LockedFilter
+        {
+            /// <summary>
+            /// All rooms, regardless of lock status.
+            /// </summary>
+            None,
+            /// <summary>
+            /// Rooms that are not locked.
+            /// </summary>
+            OnlyUnlocked,
+            /// <summary>
+            /// Only locked rooms.
+            /// </summary>
+            OnlyLocked
+        }
+
+        /// <summary>
+        /// Filter options for rooms based on anonymity.
+        /// </summary>
+        public enum AnonymousRoomsFilter
+        {
+            /// <summary>
+            /// All rooms, regardless of anonymity.
+            /// </summary>
+            None,
+            /// <summary>
+            /// Rooms that are not anonymous.
+            /// </summary>
+            ExcludeAnonymous,
+            /// <summary>
+            /// Only anonymous rooms.
+            /// </summary>
+            OnlyAnonymous
         }
 
         [Serializable]
@@ -551,6 +589,12 @@ namespace JU.TPS.Netcode
                 _enableRespawnTime = enableRespawnTime;
             }
         }
+
+        protected readonly static char[] _invalidRoomNameChars = new char[] { ' ', '\t', '\n', '\r' };
+
+        public const int MinRoomPasswordLength = 8;
+
+        public const int MaxRoomPasswordLength = 32;
 
         private static bool _setupQuitApplicationDone;
         private static bool _setupExitPlayModeDone;
@@ -648,6 +692,22 @@ namespace JU.TPS.Netcode
             get
             {
                 throw new NotImplementedException($"Missing implementation for {nameof(RawMatchSettings)} property in {GetType().Name}");
+            }
+        }
+
+        /// <summary>
+        /// Checks if the player is currently connecting to Unity Services. 
+        /// </summary>
+        public static bool IsConnecting
+        {
+            get
+            {
+                if (UnityServices.Instance == null)
+                {
+                    return false;
+                }
+
+                return UnityServices.State == ServicesInitializationState.Initializing;
             }
         }
 
@@ -1007,12 +1067,25 @@ namespace JU.TPS.Netcode
         /// </summary>
         /// <param name="page">The page number to retrieve.</param>
         /// <param name="pageSize">The number of rooms per page.</param>
-        /// <param name="passwordFilter">The password filter to apply when searching for rooms.</param>
-        /// <param name="excludeFullRooms">Whether to exclude rooms that are already full.</param>
+        /// <param name="roomNameFilter">The room name filter to apply when searching for rooms.</param>
         /// <param name="mapFilter">The map name filter to apply when searching for rooms.</param>
         /// <param name="matchType">The type of match to filter rooms by.</param>
+        /// <param name="excludeFullRooms">Whether to exclude rooms that are already full.</param>
+        /// <param name="lockedFilter">The filter for locked rooms.</param>
+        /// <param name="passwordFilter">The password filter to apply when searching for rooms.</param>
+        /// <param name="anonymousRoomsFilter">The filter for anonymous rooms.</param>
         /// <returns>A collection of rooms found. Null if the search fails or is not allowed.</returns>
-        public async static Task<IEnumerable<ISessionInfo>> FindRooms(int page, int pageSize, PasswordFilter passwordFilter, bool excludeFullRooms, string mapFilter, string matchType)
+        public async static Task<IEnumerable<ISessionInfo>> FindRooms(
+            int page,
+            int pageSize,
+            string roomNameFilter = null,
+            string mapFilter = null,
+            string matchType = null,
+            bool excludeFullRooms = false,
+            LockedFilter lockedFilter = LockedFilter.None,
+            PasswordFilter passwordFilter = PasswordFilter.None,
+            AnonymousRoomsFilter anonymousRoomsFilter = AnonymousRoomsFilter.ExcludeAnonymous
+        )
         {
             if (CanSearchRooms == false)
             {
@@ -1024,8 +1097,18 @@ namespace JU.TPS.Netcode
             }
 
             List<FilterOption> filterOptions = new();
+            if (string.IsNullOrEmpty(roomNameFilter) == false)
+            {
+                roomNameFilter = ValidateRoomName(roomNameFilter);
 
-            if (!string.IsNullOrEmpty(mapFilter))
+                filterOptions.Add(new FilterOption(
+                    field: FilterField.Name,
+                    operation: FilterOperation.Equal,
+                    value: roomNameFilter
+                ));
+            }
+
+            if (string.IsNullOrEmpty(mapFilter) == false)
             {
                 filterOptions.Add(new FilterOption(
                     field: FilterField.StringIndex1,
@@ -1034,7 +1117,7 @@ namespace JU.TPS.Netcode
                 ));
             }
 
-            if (matchType != null)
+            if (string.IsNullOrEmpty(matchType) == false)
             {
                 filterOptions.Add(new FilterOption(
                     field: FilterField.StringIndex2,
@@ -1043,7 +1126,16 @@ namespace JU.TPS.Netcode
                 ));
             }
 
-            if (passwordFilter != PasswordFilter.All)
+            if (anonymousRoomsFilter != AnonymousRoomsFilter.None)
+            {
+                filterOptions.Add(new FilterOption(
+                    field: FilterField.NumberIndex1,
+                    operation: FilterOperation.Equal,
+                    value: anonymousRoomsFilter == AnonymousRoomsFilter.OnlyAnonymous ? "1" : "0"
+                ));
+            }
+
+            if (passwordFilter != PasswordFilter.None)
             {
                 filterOptions.Add(new FilterOption(
                     field: FilterField.HasPassword,
@@ -1058,6 +1150,15 @@ namespace JU.TPS.Netcode
                     field: FilterField.AvailableSlots,
                     operation: FilterOperation.NotEqual,
                     value: "0"
+                ));
+            }
+
+            if (lockedFilter != LockedFilter.None)
+            {
+                filterOptions.Add(new FilterOption(
+                    field: FilterField.IsLocked,
+                    operation: FilterOperation.Equal,
+                    value: lockedFilter == LockedFilter.OnlyLocked ? "true" : "false"
                 ));
             }
 
@@ -1211,7 +1312,7 @@ namespace JU.TPS.Netcode
                 return "No Room";
             }
 
-            return session.Id;
+            return session.Name;
         }
 
         /// <summary>
@@ -1352,6 +1453,32 @@ namespace JU.TPS.Netcode
         }
 
         /// <summary>
+        /// Return the start scene of the room.
+        /// </summary>
+        /// <param name="session"></param>
+        /// <returns></returns>
+        public static string GetStartScene(ISession session)
+        {
+            if (session == null)
+            {
+                return null;
+            }
+
+            if (session.Properties == null)
+            {
+                return null;
+            }
+
+            if (session.Properties.TryGetValue(_roomPropertyStartScene, out SessionProperty startSceneProperty))
+            {
+                string startScene = startSceneProperty.Value.ToString();
+                startScene = string.IsNullOrEmpty(startScene) ? null : startScene;
+                return startScene;
+            }
+            return null;
+        }
+
+        /// <summary>
         /// Creates or joins a room, then raises <see cref="JoinRoom"/>. Does not start the match, just confirm player presence.
         /// </summary>
         /// <param name="roomName">Name of the room. Invalid characters are replaced.</param>
@@ -1373,17 +1500,16 @@ namespace JU.TPS.Netcode
             bool isAnonymousRoom
         )
         {
-            Debug.Assert(string.IsNullOrWhiteSpace(roomName) == false && string.IsNullOrEmpty(roomName) == false, "Room name must not be empty.");
+            Debug.Assert(roomName != null, "room name must not be null.");
+            Debug.Assert(maxPlayers > 0, "max players must be greater than zero.");
 
+            roomName = ValidateRoomName(roomName);
             if (CurrentRoom != null)
             {
                 throw new LobbyServiceException(LobbyExceptionReason.AlreadySubscribedToLobby, "Already in a room.");
             }
 
             SetupIfNeeded();
-
-            // Session IDs must not contain spaces or special characters.
-            roomName = System.Text.RegularExpressions.Regex.Replace(roomName ?? string.Empty, "[^a-zA-Z0-9_-]", "-");
 
             if (roomPassword != null)
             {
@@ -1395,9 +1521,9 @@ namespace JU.TPS.Netcode
             }
             if (roomPassword != null)
             {
-                if (roomPassword.Length < 8 || roomPassword.Length > 64)
+                if (roomPassword.Length < MinRoomPasswordLength || roomPassword.Length > MaxRoomPasswordLength)
                 {
-                    throw new LobbyServiceException(LobbyExceptionReason.IncorrectPassword, "Room password must be between 8 and 64 characters.");
+                    throw new LobbyServiceException(LobbyExceptionReason.IncorrectPassword, $"Room password must be between {MinRoomPasswordLength} and {MaxRoomPasswordLength} characters.");
                 }
             }
 
@@ -1418,15 +1544,6 @@ namespace JU.TPS.Netcode
                 }
             }
 
-            if (matchType != null)
-            {
-                _roomProperties[_roomPropertyMatchType] = new(
-                    value: matchType,
-                    visibility: VisibilityPropertyOptions.Public,
-                    index: PropertyIndex.String2
-                );
-            }
-
             _roomProperties[_roomPropertyIsAnonymous] = new(
                 value: (isAnonymousRoom == true ? 1 : 0).ToString(),
                 visibility: VisibilityPropertyOptions.Public,
@@ -1442,8 +1559,18 @@ namespace JU.TPS.Netcode
                 );
             }
 
+            if (matchType != null)
+            {
+                _roomProperties[_roomPropertyMatchType] = new(
+                    value: matchType,
+                    visibility: VisibilityPropertyOptions.Public,
+                    index: PropertyIndex.String2
+                );
+            }
+
             SessionOptions sessionOptions = new SessionOptions
             {
+                Name = roomName,
                 MaxPlayers = maxPlayers,
                 IsLocked = false,
                 IsPrivate = false,
@@ -1451,9 +1578,44 @@ namespace JU.TPS.Netcode
                 SessionProperties = _roomProperties
             }.WithRelayNetwork();
 
-            CurrentRoom = await MultiplayerService.Instance.CreateOrJoinSessionAsync(roomName, sessionOptions);
+            string roomId = ValidateRoomId(roomName);
+            ISession session = await MultiplayerService.Instance.CreateOrJoinSessionAsync(roomId, sessionOptions);
+            bool sessionSettingsMatch =
+                session.MaxPlayers == maxPlayers
+                && session.HasPassword == (roomPassword != null)
+                && SessionPropertyMatches(session, _roomPropertyMapName, mapName)
+                && SessionPropertyMatches(session, _roomPropertyStartScene, startScene)
+                && SessionPropertyMatches(session, _roomPropertyMatchType, matchType)
+                && SessionPropertyMatches(session, _roomPropertyIsAnonymous, isAnonymousRoom ? "1" : "0");
+
+            if (!sessionSettingsMatch)
+            {
+                await session.LeaveAsync();
+                throw CreateRoomSettingsMismatchException(session.Name, "one or more room settings");
+            }
+
+            CurrentRoom = session;
             JoinRoom?.Invoke(CurrentRoom);
             return CurrentRoom;
+        }
+
+        private static bool SessionPropertyMatches(ISession session, string key, string expectedValue)
+        {
+            if (session == null || session.Properties == null
+                || !session.Properties.TryGetValue(key, out SessionProperty property) || property == null)
+            {
+                return string.IsNullOrEmpty(expectedValue);
+            }
+
+            return property.Value == expectedValue;
+        }
+
+        protected static LobbyServiceException CreateRoomSettingsMismatchException(string roomName, string setting)
+        {
+            return new LobbyServiceException(
+                LobbyExceptionReason.LobbyConflict,
+                $"A room named '{roomName}' already exists, but its {setting} does not match the requested settings. Use a different room name to create a new room."
+            );
         }
 
         /// <summary>
@@ -1480,6 +1642,53 @@ namespace JU.TPS.Netcode
         internal virtual (Vector3 position, Quaternion rotation) GenerateSpawnPosition(ulong ownerClientId)
         {
             throw new NotImplementedException($"Missing implementation for {nameof(GenerateSpawnPosition)} in {GetType().Name}");
+        }
+
+        protected static string ValidateRoomName(string roomName)
+        {
+            Debug.Assert(!string.IsNullOrEmpty(roomName), "Room name cannot be null or empty.");
+            roomName = roomName.Trim(_invalidRoomNameChars).ToLower();
+            Debug.Assert(!string.IsNullOrEmpty(roomName), "Room name cannot be null or empty.");
+
+            return roomName;
+        }
+
+        protected static string ValidateRoomId(string roomId)
+        {
+            roomId = ValidateRoomName(roomId);
+            roomId = System.Text.RegularExpressions.Regex.Replace(roomId, "[^a-zA-Z0-9_-]", "-");
+            Debug.Assert(!string.IsNullOrEmpty(roomId), "Room ID cannot be null or empty.");
+            return roomId;
+        }
+
+        protected static bool IsValid(ISession session)
+        {
+            if (session == null)
+            {
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(session.Name))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        protected static bool IsValid(ISessionInfo session)
+        {
+            if (session == null)
+            {
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(session.Name))
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private static bool TryQuit()
@@ -1850,30 +2059,72 @@ namespace JU.TPS.Netcode
         }
 
         /// <summary>
-        /// Starts the match. Implement it to create or join the session for the mode.
+        /// Join on a room (if not already joined) and starts a match.
         /// </summary>
         /// <param name="matchSettings">Settings of the match to start.</param>
         protected virtual async Task CreateMatch(TMatchSettings matchSettings)
         {
-            throw new NotImplementedException($"Missing implementation for {nameof(CreateMatch)} on {GetType().Name}");
+            ThrowIfMatchSettingsInvalid(matchSettings);
+
+            if (CurrentRoom == null)
+            {
+                await CreateOrJoinRoom(matchSettings, anonymousRoom: false);
+            }
+            else
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (GetRoomName(CurrentRoom) != matchSettings.RoomName)
+                {
+                    throw new LobbyServiceException(LobbyExceptionReason.LobbyConflict, $"The current room {CurrentRoom.Id} has a different room name than {typeof(TMatchSettings).Name}.{nameof(StartMatchSettings.RoomName)}.");
+                }
+                if (CurrentRoom.MaxPlayers != matchSettings.MatchMaxPlayers)
+                {
+                    throw new LobbyServiceException(LobbyExceptionReason.LobbyConflict, $"The current room {CurrentRoom.Id} has a different max players than {typeof(TMatchSettings).Name}.{nameof(StartMatchSettings.MatchMaxPlayers)}.");
+                }
+                if (GetMapName(CurrentRoom) != matchSettings.MapName)
+                {
+                    throw new LobbyServiceException(LobbyExceptionReason.LobbyConflict, $"The current room {CurrentRoom.Id} has a different map name than {typeof(TMatchSettings).Name}.{nameof(StartMatchSettings.MapName)}.");
+                }
+                if (GetStartScene(CurrentRoom) != matchSettings.StartScene)
+                {
+                    throw new LobbyServiceException(LobbyExceptionReason.LobbyConflict, $"The current room {CurrentRoom.Id} has a different start scene than {typeof(TMatchSettings).Name}.{nameof(StartMatchSettings.StartScene)}.");
+                }
+                if (GetMatchType(CurrentRoom) != MatchType)
+                {
+                    throw new LobbyServiceException(LobbyExceptionReason.LobbyConflict, $"The current room {CurrentRoom.Id} has a different match type than {MatchType}.");
+                }
+#endif
+            }
         }
 
         /// <summary>
-        /// Creates or joins an anonymous room for the current <see cref="StartMatchSettings"/>.
+        /// Creates or joins a room for the current <see cref="StartMatchSettings"/>.
+        /// For anonymous rooms (that are not listed in the room list), they do not use a password or room name. Are nice for random matches.
         /// </summary>
-        /// <returns></returns>
+        /// <param name="anonymousRoom">If true, the player will join or create a anonymous room based on this manager's type and <see cref="StartMatchSettings"/>.</param>
         /// <exception cref="LobbyServiceException">Unity Services is unavailable or a room is already joined.</exception>
         /// <exception cref="InvalidOperationException"><see cref="NetworkManager"/> is not present in the scene.</exception>
         /// <exception cref="TimeoutException">Room search does not become available within the timeout.</exception>
-        public async static Task<ISession> CreateOrJoinOnAnonymousRoom()
+        public static Task<ISession> CreateOrJoinRoom(bool anonymousRoom)
+        {
+            return CreateOrJoinRoom(StartMatchSettings, anonymousRoom);
+        }
+
+        private async static Task<ISession> CreateOrJoinRoom(TMatchSettings matchSettings, bool anonymousRoom)
         {
             if (IsConnectedAndAuthenticated == false)
             {
                 throw new LobbyServiceException(LobbyExceptionReason.NetworkError, "Not connected and authenticated.");
             }
 
-            ThrowIfMatchSettingsInvalid();
+            ThrowIfAlreadyOnRoom();
+            ThrowIfMatchSettingsInvalid(matchSettings);
             ThrowIfNetworkManagerMissing();
+
+            while (IsConnecting)
+            {
+                await Task.Delay(100);
+            }
 
             // Wait until we can search for rooms.
             float startTime = Time.unscaledTime;
@@ -1888,60 +2139,141 @@ namespace JU.TPS.Netcode
                 await Task.Delay(100);
             }
 
-            IEnumerable<ISessionInfo> sessionsFound = await FindRooms(
-                page: 0,
-                pageSize: 1, // Only need the first room,
-                passwordFilter: PasswordFilter.All,
-                excludeFullRooms: true,
-                mapFilter: StartMatchSettings.MapName,
-                matchType: MatchType
-            );
-
-            string sessionId = null;
-            if (sessionsFound.Count() > 0) // Join existing room if found.
+            ISessionInfo sessionInfo = null;
+            if (anonymousRoom)
             {
-                sessionId = sessionsFound.First().Id;
+                IEnumerable<ISessionInfo> sessionsFound = await FindRooms(
+                    page: 0,
+                    pageSize: 50,
+                    roomNameFilter: null,
+                    excludeFullRooms: true,
+                    passwordFilter: PasswordFilter.WithoutPassword,
+                    anonymousRoomsFilter: AnonymousRoomsFilter.OnlyAnonymous,
+                    mapFilter: matchSettings.MapName,
+                    matchType: MatchType,
+                    lockedFilter: LockedFilter.OnlyUnlocked
+                );
+
+                foreach (ISessionInfo s in sessionsFound)
+                {
+                    if (s.MaxPlayers == matchSettings.MatchMaxPlayers)
+                    {
+                        sessionInfo = s;
+                        break;
+                    }
+                }
             }
-            else // Create a new anonymous room if no existing room is found.
+            else
             {
-                sessionId = $"Anonymous_{Guid.NewGuid()}";
+                IEnumerable<ISessionInfo> sessionsFound = await FindRooms(
+                    page: 0,
+                    pageSize: 1, // Only need the first room,
+                    roomNameFilter: matchSettings.RoomName,
+                    passwordFilter: PasswordFilter.None,
+                    anonymousRoomsFilter: AnonymousRoomsFilter.ExcludeAnonymous,
+                    excludeFullRooms: false,
+                    mapFilter: string.Empty,
+                    matchType: string.Empty,
+                    lockedFilter: LockedFilter.None
+                );
+
+                if (sessionsFound.Any())
+                {
+                    sessionInfo = sessionsFound.First();
+                }
+            }
+            
+            // A room was found, check if is valid.
+            if (IsValid(sessionInfo) == true)
+            {
+                if (anonymousRoom)
+                {
+                    matchSettings.RoomName = sessionInfo.Id;
+
+                    // Invalid room, set to null to create a new one later.
+                    if (sessionInfo.MaxPlayers != matchSettings.MatchMaxPlayers)
+                    {
+                        sessionInfo = null;
+                    }
+                }
+                else
+                {
+                    // This can be triggered only for non-anonymous rooms when a room is found but is already full.
+                    // For anonymous rooms, this will be not triggered because the room found is already with available slots.
+                    if (sessionInfo.AvailableSlots == 0)
+                    {
+                        throw new LobbyServiceException(LobbyExceptionReason.LobbyFull, $"The room {sessionInfo.Id} is full. Create another one with a different name or create an anonymous room (this one does not require a name).");
+                    }
+                    if (sessionInfo.MaxPlayers != matchSettings.MatchMaxPlayers)
+                    {
+                        throw CreateRoomSettingsMismatchException(sessionInfo.Name, "maximum player count");
+                    }
+                    if (GetMapName(sessionInfo) != matchSettings.MapName)
+                    {
+                        throw CreateRoomSettingsMismatchException(sessionInfo.Name, "map");
+                    }
+                    if (GetStartScene(sessionInfo) != matchSettings.StartScene)
+                    {
+                        throw CreateRoomSettingsMismatchException(sessionInfo.Name, "start scene");
+                    }
+                    if (GetMatchType(sessionInfo) != MatchType)
+                    {
+                        throw CreateRoomSettingsMismatchException(sessionInfo.Name, "match type");
+                    }
+                    if (sessionInfo.IsLocked == true)
+                    {
+                        throw new LobbyServiceException(LobbyExceptionReason.LobbyLocked, $"The room {sessionInfo.Id} exist, but can't join because it is locked.");
+                    }
+
+                    // Password is not used.
+                    matchSettings.RoomPassword = matchSettings.RoomPassword?.Trim();
+                    if (sessionInfo.HasPassword == false)
+                    {
+                        matchSettings.RoomPassword = string.Empty;
+                    }
+
+                    if (sessionInfo.HasPassword == true && (string.IsNullOrEmpty(matchSettings.RoomPassword) ||
+                    matchSettings.RoomPassword.Length < MinRoomPasswordLength || matchSettings.RoomPassword.Length > MaxRoomPasswordLength))
+                    {
+                        throw new LobbyServiceException(LobbyExceptionReason.IncorrectPassword, $"The room {sessionInfo.Name} requires a password between {MinRoomPasswordLength} and {MaxRoomPasswordLength} characters.");
+                    }
+                }
+            }
+            // No existing room found, create a new anonymous room.
+            if (anonymousRoom == true && IsValid(sessionInfo) == false)
+            {
+                matchSettings.RoomName = $"Anonymous_{Guid.NewGuid()}";
             }
 
-            StartMatchSettings.RoomName = sessionId;
+            // Validate to create a new (non-anonymous) room.
+            if (anonymousRoom == false && IsValid(sessionInfo) == false)
+            {
+                if (string.IsNullOrEmpty(matchSettings.RoomName))
+                {
+                    throw new ArgumentException("Room name cannot be null or empty for non-anonymous rooms when creating a new room.");
+                }
+            }
+
+            if (anonymousRoom == true)
+            {
+                matchSettings.RoomPassword = null;
+            }
+            else if (sessionInfo != null)
+            {
+                matchSettings.RoomName = sessionInfo.Id;
+            }
+
             ISession session = await CreateOrJoinRoom(
-                roomName: sessionId,
-                maxPlayers: StartMatchSettings.MatchMaxPlayers,
-                roomPassword: null,
-                mapName: StartMatchSettings.MapName,
-                startScene: StartMatchSettings.StartScene,
+                roomName: matchSettings.RoomName,
+                maxPlayers: matchSettings.MatchMaxPlayers,
+                roomPassword: matchSettings.RoomPassword,
+                mapName: matchSettings.MapName,
+                startScene: matchSettings.StartScene,
                 matchType: MatchType,
-                isAnonymousRoom: true
+                isAnonymousRoom: anonymousRoom
             );
 
             return session;
-        }
-
-        /// <summary>
-        /// Creates or joins a match room based on the current <see cref="StartMatchSettings"/>. Does not start the match, just confirm player presence.
-        /// Usefull to enter on a room from main menu and then load game scene (that contains the match manager, it's made manually by the developer).
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException"><see cref="NetworkManager"/> is not present in the scene.</exception>
-        /// <exception cref="LobbyServiceException">A room is already joined, or the configured room password is outside the supported length (8-64 characters).</exception>
-        public async static Task CreateOrJoinOnMatchRoom()
-        {
-            ThrowIfMatchSettingsInvalid();
-            ThrowIfNetworkManagerMissing();
-
-            await CreateOrJoinRoom(
-                roomName: StartMatchSettings.RoomName,
-                maxPlayers: StartMatchSettings.MatchMaxPlayers,
-                roomPassword: StartMatchSettings.RoomPassword,
-                mapName: StartMatchSettings.MapName,
-                startScene: StartMatchSettings.StartScene,
-                matchType: MatchType,
-                isAnonymousRoom: false
-            );
         }
 
         private void OnPlayerSpawned(TPlayerProperties playerProperties)
@@ -2069,12 +2401,28 @@ namespace JU.TPS.Netcode
 
         protected static void ThrowIfMatchSettingsInvalid()
         {
+            ThrowIfMatchSettingsInvalid(StartMatchSettings);
+        }
+
+        protected static void ThrowIfMatchSettingsInvalid(TMatchSettings settings)
+        {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Assert(StartMatchSettings != null, $"{nameof(TManager)}.{nameof(StartMatchSettings)} must be assigned.");
-            Debug.Assert(!string.IsNullOrEmpty(StartMatchSettings.PlayerName), $"{nameof(TManager)}.{nameof(StartMatchSettings)}.{nameof(StartMatchSettings.PlayerName)} must be assigned.");
-            Debug.Assert(!string.IsNullOrEmpty(StartMatchSettings.MapName), $"{nameof(TManager)}.{nameof(StartMatchSettings)}.{nameof(StartMatchSettings.MapName)} must be assigned.");
-            Debug.Assert(!string.IsNullOrEmpty(StartMatchSettings.StartScene), $"{nameof(TManager)}.{nameof(StartMatchSettings)}.{nameof(StartMatchSettings.StartScene)} must be assigned.");
+            Debug.Assert(settings != null, "Match settings are missing.");
+            if (settings == null) return;
+
+            Debug.Assert(!string.IsNullOrEmpty(settings.PlayerName), "Enter a player name on match settings.");
+            Debug.Assert(!string.IsNullOrEmpty(settings.MapName), "Choose a map name on match settings.");
+            Debug.Assert(!string.IsNullOrEmpty(settings.StartScene), "Choose a starting scene on match settings.");
+            Debug.Assert(settings.MatchMaxPlayers > 0, "Set the players count to bigger than 0 on match settings.");
 #endif
+        }
+
+        public static void ThrowIfAlreadyOnRoom()
+        {
+            if (CurrentRoom != null)
+            {
+                throw new InvalidOperationException("Already in a room.");
+            }
         }
     }
 }

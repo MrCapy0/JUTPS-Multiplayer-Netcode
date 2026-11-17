@@ -28,7 +28,7 @@ namespace JU.TPS.Netcode
             /// Maximum number of players in the session.
             /// </summary>
             [Space]
-            public int MaxPlayers;
+            [SerializeField] private int _maxPlayers;
 
             /// <inheritdoc/>
             public override string MapName
@@ -44,15 +44,21 @@ namespace JU.TPS.Netcode
                 internal set => _startScene = value;
             }
 
+            /// <inheritdoc/>
+            public override int MatchMaxPlayers
+            {
+                get => _maxPlayers;
+            }
+
             /// <param name="sessionName">Name of the session.</param>
             /// <param name="playerName">Name of the local player.</param>
-            /// <param name="maxPlayers">Initial value of <see cref="MaxPlayers"/>.</param>
+            /// <param name="maxPlayers">Initial value of <see cref="_maxPlayers"/>.</param>
             /// <param name="mapName">Initial value of <see cref="MapName"/>.</param>
             /// <param name="startScene">Initial value of <see cref="StartScene"/>.</param>
             public MatchSettings(string sessionName, string playerName, int maxPlayers, string mapName = null, string startScene = null) :
             base(sessionName, playerName)
             {
-                MaxPlayers = maxPlayers;
+                _maxPlayers = maxPlayers;
                 _mapName = mapName;
                 _startScene = startScene;
             }
@@ -70,30 +76,6 @@ namespace JU.TPS.Netcode
                 mapName: $"Debug {gameObject.scene.buildIndex}",
                 startScene: gameObject.scene.name
             );
-        }
-
-        protected override void Awake()
-        {
-            base.Awake();
-            SubscribeOnPlayerSpawned(OnPlayerSpawned);
-        }
-
-        /// <inheritdoc/>
-        protected override async Task CreateMatch(MatchSettings matchSettings)
-        {
-            await CreateOrJoinRoom(
-                roomName: matchSettings.RoomName,
-                maxPlayers: matchSettings.MaxPlayers,
-                mapName: matchSettings.MapName,
-                startScene: matchSettings.StartScene,
-                roomPassword: matchSettings.RoomPassword,
-                isAnonymousRoom: false,
-                matchType: MatchType
-            );
-        }
-
-        private void OnPlayerSpawned(JUNetcodeSimpleMatchPlayerProperties player)
-        {
         }
 
         /// <inheritdoc/>
